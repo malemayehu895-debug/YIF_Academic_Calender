@@ -1,0 +1,696 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#1B2A4A;
+    --ink-soft:#4A5A7A;
+    --paper:#FFFFFF;
+    --paper-raised:#F7F6F3;
+    --rule:#D8D5CC;
+    --rule-soft:#E6E3DA;
+    --gold:#B8862E;
+    --conflict:#A6341F;
+    --confirm:#3F6B4C;
+    --yellow:#F4D35E;
+    --yellow-tint:#FCF2C6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  #app{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding:28px 20px 60px;
+  }
+  .wrap{max-width:1120px;margin:0 auto;}
+
+  .masthead{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;
+    margin-bottom:22px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+  .masthead-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .masthead h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:32px;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .stamp{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--gold);
+    border:1px solid var(--gold);
+    padding:5px 10px;
+    border-radius:2px;
+    text-align:center;
+    line-height:1.5;
+    white-space:nowrap;
+  }
+
+  .tabs{
+    display:flex;
+    gap:2px;
+    margin-bottom:22px;
+    border-bottom:1px solid var(--rule);
+  }
+  .tab{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    padding:10px 16px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+  }
+  .tab.active{ color:var(--ink); border-bottom:2px solid var(--gold); font-weight:500; }
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .grid2{ display:grid; grid-template-columns:340px 1fr; gap:24px; align-items:start; }
+  @media (max-width:800px){ .grid2{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--rule-soft);
+    border-radius:3px;
+    padding:18px;
+    box-shadow:0 1px 0 rgba(27,42,74,0.06);
+  }
+  .card h2{
+    font-family:'Fraunces', serif;
+    font-size:16px;
+    font-weight:600;
+    margin:0 0 14px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--rule-soft);
+  }
+  .card h2 span{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:400;
+    margin-top:2px;
+  }
+
+  label{
+    display:block; font-size:11px; font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.04em; color:var(--ink-soft); margin:12px 0 4px;
+  }
+  label:first-of-type{margin-top:0;}
+  input, select{
+    width:100%; padding:8px 9px; border:1px solid var(--rule); border-radius:2px;
+    font-family:'IBM Plex Sans', sans-serif; font-size:13px; background:#fff; color:var(--ink);
+  }
+  input:focus, select:focus{ outline:2px solid var(--gold); outline-offset:-1px; }
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  .hint-sm{font-size:10.5px; color:var(--ink-soft); margin-top:4px; line-height:1.4;}
+
+  button.primary{
+    margin-top:16px; width:100%; background:var(--ink); color:var(--paper); border:none;
+    padding:10px 14px; font-family:'IBM Plex Mono', monospace; font-size:12px;
+    letter-spacing:0.06em; text-transform:uppercase; border-radius:2px; cursor:pointer;
+  }
+  button.primary:hover{background:var(--ink-soft);}
+  button.ghost{
+    background:none; border:1px solid var(--rule); color:var(--ink-soft); padding:6px 10px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; border-radius:2px; cursor:pointer;
+  }
+  button.ghost:hover{border-color:var(--ink);color:var(--ink);}
+
+  .warn{ margin-top:12px; padding:10px 12px; background:#F7EAE3; border:1px solid var(--conflict); color:var(--conflict); font-size:12px; border-radius:2px; line-height:1.5; }
+  .ok{ margin-top:12px; padding:10px 12px; background:#E7EFE8; border:1px solid var(--confirm); color:var(--confirm); font-size:12px; border-radius:2px; }
+
+  .term-strip{ display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  .term-pill{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; padding:6px 12px; border:1px solid var(--rule);
+    border-radius:20px; cursor:pointer; color:var(--ink-soft); background:var(--paper-raised);
+  }
+  .term-pill.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:10px 16px; margin-bottom:16px; }
+  .legend-item{ display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); }
+  .legend-dot{ width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+  .day-group{margin-bottom:18px;}
+  .day-head{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--ink-soft); padding-bottom:6px; border-bottom:1px solid var(--rule-soft); margin-bottom:8px;
+    display:flex; justify-content:space-between;
+  }
+  .session-card{
+    display:grid; grid-template-columns:60px 78px 3px 1fr auto auto; gap:10px; align-items:center;
+    padding:9px 4px; border-bottom:1px solid var(--rule-soft);
+  }
+  .session-card:last-child{border-bottom:none;}
+  .s-week{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft); background:var(--paper); border:1px solid var(--rule-soft); border-radius:10px; padding:2px 6px; text-align:center; }
+  .s-time{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); }
+  .s-bar{align-self:stretch; border-radius:2px;}
+  .s-main .course{font-weight:500; font-size:13.5px;}
+  .s-main .meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .s-main .meta b{color:var(--ink);font-weight:500;}
+  .s-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase;
+    padding:2px 7px; border-radius:20px; white-space:nowrap; color:#fff;
+  }
+  .s-tag.conflict{background:#F7EAE3; color:var(--conflict); border:1px solid var(--conflict);}
+  .del-btn{
+    background:none; border:1px solid var(--rule); color:var(--conflict); width:26px; height:26px;
+    border-radius:2px; cursor:pointer; font-size:14px; line-height:1;
+  }
+  .del-btn:hover{ background:var(--conflict); color:#fff; border-color:var(--conflict); }
+
+  .empty{ padding:30px 16px; text-align:center; color:var(--ink-soft); font-size:13px; border:1px dashed var(--rule); border-radius:3px; }
+  .empty b{display:block; color:var(--ink); font-family:'Fraunces',serif; font-size:15px; margin-bottom:4px;}
+
+  .week-scroll{ overflow-x:auto; padding-bottom:4px; }
+  .week-block{ margin-bottom:18px; border:1px solid var(--rule-soft); border-radius:4px; overflow:hidden; min-width:760px; }
+  .week-head{
+    background:var(--ink); color:var(--paper); padding:8px 14px; font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.06em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .week-head .wk-num{ font-family:'Fraunces', serif; font-size:15px; text-transform:none; letter-spacing:0; color:#fff; }
+  .week-head .wk-range{ color:var(--gold); font-size:10px; }
+  .week-grid{ display:grid; grid-template-columns:repeat(7, minmax(100px,1fr)); background:var(--paper-raised); }
+  .week-day{ border-right:1px solid var(--rule-soft); padding:8px 7px; min-height:110px; }
+  .week-day:last-child{border-right:none;}
+  .week-day.weekend{ background:#F3F1EA; }
+  .week-day.yellow-day{ background:var(--yellow-tint); }
+  .week-day-head{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--ink-soft);
+    text-transform:uppercase; margin-bottom:6px;
+  }
+  .week-day-head .dnum{ font-weight:600; color:var(--ink); font-family:'Fraunces',serif; font-size:15px; display:block; }
+  .chip{ border-radius:3px; padding:5px 7px; margin-bottom:4px; }
+  .chip .c{font-weight:600; font-size:10.5px; line-height:1.3;}
+  .chip .m{font-size:9px; opacity:0.9; margin-top:2px;}
+  .chip .t{font-family:'IBM Plex Mono', monospace; font-size:9px; margin-top:3px; opacity:0.95;}
+  .day-empty{font-size:16px; color:var(--rule); text-align:center; margin-top:24px;}
+
+  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:22px;}
+  .stat{ background:var(--paper-raised); border:1px solid var(--rule-soft); border-radius:3px; padding:14px 16px; }
+  .stat .num{font-family:'Fraunces',serif; font-size:26px; font-weight:600; color:var(--ink);}
+  .stat .lbl{font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-top:2px;}
+
+  .upcoming-item{ display:flex; justify-content:space-between; align-items:center; padding:8px 4px; border-bottom:1px solid var(--rule-soft); font-size:12.5px; gap:8px; }
+  .upcoming-item:last-child{border-bottom:none;}
+  .upcoming-item .u-date{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); min-width:90px; }
+  .upcoming-item .u-title{font-weight:500; flex:1;}
+
+  .cat-breakdown{ display:flex; flex-wrap:wrap; gap:8px; }
+  .cat-pill{ display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:5px 10px; border-radius:20px; }
+
+  .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
+</style>
+
+<div id="app">
+  <div class="wrap">
+
+    <div class="masthead">
+      <div>
+        <div class="masthead-eyebrow">Young India Fellowship &middot; Ashoka University</div>
+        <h1>YIF Academic Calendar</h1>
+      </div>
+      <div class="stamp">PROTOTYPE<br>demo data, not live</div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+
+    <!-- ADMIN -->
+    <div class="panel" id="panel-admin">
+      <div class="grid2">
+        <div class="card">
+          <h2>Log a session<span>Academic team entry</span></h2>
+          <div class="row2">
+            <div><label>Term</label><select id="a-term"></select></div>
+            <div><label>Week</label><select id="a-week"></select></div>
+          </div>
+          <label>Category</label>
+          <select id="a-type">
+            <option value="Core">Core</option>
+            <option value="CIE">CIE — Critical Inquiry &amp; Expression</option>
+            <option value="ELM">ELM</option>
+            <option value="DS">DS</option>
+            <option value="Guest">Guest Session / Lecture / Seminar</option>
+            <option value="Elective">Elective</option>
+            <option value="Holiday">Holiday</option>
+          </select>
+          <div class="hint-sm" id="a-type-hint"></div>
+          <label>Course / session title <span id="a-course-lbl-extra"></span></label>
+          <input id="a-course" placeholder="e.g. Statistical Thinking and Problem Solving">
+          <label>Faculty</label>
+          <input id="a-faculty" placeholder="e.g. Santosh Venkatesh (leave blank for Holiday)">
+          <div class="row2">
+            <div><label>Date</label><input id="a-date" type="date"></div>
+            <div><label>Venue</label><input id="a-venue" placeholder="e.g. Takshila"></div>
+          </div>
+          <div class="row2">
+            <div><label>Start</label><input id="a-start" type="time" value="10:00"></div>
+            <div><label>End</label><input id="a-end" type="time" value="12:00"></div>
+          </div>
+          <div id="a-feedback"></div>
+          <button class="primary" id="a-submit">Add to calendar</button>
+        </div>
+
+        <div>
+          <div class="toolbar">
+            <div class="term-strip" id="a-term-strip"></div>
+            <button class="ghost" id="a-reset">Reset demo data</button>
+          </div>
+          <div class="card">
+            <h2>Confirmed sessions<span id="a-term-label">Term 1</span></h2>
+            <div class="hint-sm" style="margin-bottom:10px;">Click the &times; to remove a session logged in error.</div>
+            <div id="a-agenda"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FELLOW -->
+    <div class="panel" id="panel-fellow">
+      <div class="toolbar">
+        <div class="term-strip" id="fellow-term-strip"></div>
+      </div>
+      <div class="legend" id="fellow-legend"></div>
+      <div id="fellow-weeks"></div>
+    </div>
+
+    <!-- TEAM SUMMARY -->
+    <div class="panel" id="panel-summary">
+      <div class="stat-grid" id="summary-stats"></div>
+      <div class="grid2">
+        <div class="card">
+          <h2>Coming up<span>Next holidays, guest sessions &amp; key dates</span></h2>
+          <div id="summary-upcoming"></div>
+        </div>
+        <div class="card">
+          <h2>Category breakdown<span>Sessions logged, all terms</span></h2>
+          <div class="cat-breakdown" id="summary-catbreakdown"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const TERMS = ['Term 1','Term 2','Term 3','Term 4','Term 5','Term 6','Term 7','Term 8'];
+  const WEEKS = Array.from({length:10}, (_,i)=>i+1);
+  const STORAGE_KEY = 'yif-academic-calendar-v3';
+
+  const CATS = {
+    Core:     { color:'#1B2A4A', label:'Core', text:'#fff' },
+    CIE:      { color:'#1E7A72', label:'CIE (Critical Inquiry & Expression)', text:'#fff' },
+    ELM:      { color:'#6B4C8A', label:'ELM', text:'#fff' },
+    DS:       { color:'#B85C2E', label:'DS', text:'#fff' },
+    Guest:    { color:'#8A6BAE', label:'Guest Session / Lecture / Seminar', text:'#fff' },
+    Elective: { color:'#3F6B4C', label:'Elective', text:'#fff' },
+    Holiday:  { color:'#F4D35E', label:'Holiday', text:'#5C4A0A' }
+  };
+  const TYPE_HINTS = {
+    Core: 'Auto-numbered — e.g. entering "Stats" three times logs Stats (Session #1), (#2), (#3).',
+    CIE: 'Critical Inquiry & Expression coursework.',
+    ELM: 'ELM-track session.',
+    DS: 'Data Science-track session.',
+    Guest: 'One-off guest lecture, talk, or seminar.',
+    Elective: 'Student-chosen elective coursework.',
+    Holiday: 'Non-teaching day — type the holiday name as the title (e.g. "Independence Day").'
+  };
+
+  const SEED = {
+    sessions: [
+      {id:'s1', term:'Term 1', week:1, course:'Check-In', type:'Guest', faculty:'', venue:'Campus', date:'2026-07-18', start:'09:00', end:'10:00'},
+      {id:'s2', term:'Term 1', week:1, course:'Orientation', type:'Guest', faculty:'', venue:'Campus', date:'2026-07-20', start:'09:00', end:'12:00'},
+      {id:'s3', term:'Term 1', week:2, course:'Statistical Thinking and Problem Solving in Modern Life', type:'Core', number:1, faculty:'Santosh S Venkatesh', venue:'Takshila', date:'2026-07-27', start:'10:00', end:'12:00'},
+      {id:'s4', term:'Term 1', week:2, course:'Gift, Commodity, Value: Anthropology of Exchange', type:'CIE', faculty:'Mekhala Krishnamurthy', venue:'AC04-304', date:'2026-07-28', start:'10:00', end:'12:00'},
+      {id:'s5', term:'Term 1', week:2, course:'Statistical Thinking and Problem Solving in Modern Life', type:'Core', number:2, faculty:'Santosh S Venkatesh', venue:'Takshila', date:'2026-07-29', start:'10:00', end:'12:00'},
+      {id:'s6', term:'Term 1', week:2, course:'Gift, Commodity, Value: Anthropology of Exchange', type:'CIE', faculty:'Mekhala Krishnamurthy', venue:'AC04-304', date:'2026-07-30', start:'10:00', end:'12:00'},
+      {id:'s7', term:'Term 1', week:2, course:'Design Thinking Workshop', type:'Elective', faculty:'Priya Nair', venue:'AC04-304', date:'2026-07-30', start:'10:30', end:'11:30'},
+      {id:'s9', term:'Term 1', week:3, course:'Foundations of Data Storytelling', type:'DS', faculty:'Ariun Rao', venue:'AC03-201', date:'2026-08-04', start:'14:00', end:'16:00'},
+      {id:'s10', term:'Term 1', week:3, course:'Talk: Public Policy in Practice', type:'Guest', faculty:'Guest Speaker', venue:'Amphitheatre', date:'2026-08-05', start:'16:00', end:'17:30'},
+      {id:'s8', term:'Term 1', week:5, course:'Independence Day', type:'Holiday', faculty:'', venue:'', date:'2026-08-15', start:'00:00', end:'23:59'}
+    ]
+  };
+
+  let state = null;
+  let currentRole = 'admin';
+  let adminTerm = 'Term 1';
+  let fellowTerm = 'Term 1';
+
+  function uid(){ return 'x' + Math.random().toString(36).slice(2,9); }
+
+  async function loadState(){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, true);
+      state = JSON.parse(res.value);
+    }catch(e){
+      state = JSON.parse(JSON.stringify(SEED));
+      await saveState();
+    }
+    render();
+  }
+  async function saveState(){
+    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state), true); }
+    catch(e){ console.error('save failed', e); }
+  }
+  async function resetDemo(){
+    state = JSON.parse(JSON.stringify(SEED));
+    await saveState(); render();
+  }
+
+  function timeToMin(t){ const [h,m] = t.split(':').map(Number); return h*60+m; }
+  function fmtTime(t){
+    const [h,m] = t.split(':').map(Number);
+    const period = h>=12?'PM':'AM';
+    const hh = ((h+11)%12)+1;
+    return hh + (m? ':'+String(m).padStart(2,'0') : '') + ' ' + period;
+  }
+  function fmtTimeShort(t){
+    const [h,m] = t.split(':').map(Number);
+    const period = h>=12?'pm':'am';
+    const hh = ((h+11)%12)+1;
+    return hh + (m? ':'+String(m).padStart(2,'0') : '') + period;
+  }
+  function fmtDate(d){
+    const dt = new Date(d+'T00:00:00');
+    return dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+  }
+  function displayTitle(s){
+    return s.type==='Core' && s.number ? `${s.course} (Session #${s.number})` : s.course;
+  }
+  function catColor(type){ return (CATS[type]||CATS.Elective).color; }
+  function catText(type){ return (CATS[type]||CATS.Elective).text; }
+
+  // Extended palette so many distinct courses stay visually distinguishable as the calendar grows
+  const COURSE_PALETTE = [
+    '#1B2A4A','#1E7A72','#6B4C8A','#B85C2E','#8A6BAE','#3F6B4C','#2E6B8A',
+    '#8A2E4A','#4A6B2E','#2E4A8A','#8A5C2E','#5C2E8A','#2E8A6B','#8A2E2E',
+    '#2E8A2E','#2E2E8A','#8A6B2E','#6B8A2E','#2E8A8A','#8A2E8A'
+  ];
+  function courseColor(course){
+    if (!course) return CATS.Elective.color;
+    let hash = 0;
+    for (let i=0;i<course.length;i++){ hash = course.charCodeAt(i) + ((hash<<5)-hash); }
+    return COURSE_PALETTE[Math.abs(hash) % COURSE_PALETTE.length];
+  }
+
+  function findConflicts(candidate, excludeId){
+    if (candidate.type==='Holiday') return [];
+    return state.sessions.filter(s=>{
+      if (s.id===excludeId || s.type==='Holiday') return false;
+      if (s.date !== candidate.date) return false;
+      const overlap = timeToMin(candidate.start) < timeToMin(s.end) && timeToMin(candidate.end) > timeToMin(s.start);
+      if (!overlap) return false;
+      return (candidate.faculty && s.faculty === candidate.faculty) || (candidate.venue && s.venue === candidate.venue);
+    });
+  }
+
+  function groupByDate(sessions){
+    const map = {};
+    sessions.forEach(s=>{ (map[s.date] = map[s.date]||[]).push(s); });
+    return Object.keys(map).sort().map(date=>({
+      date, items: map[date].sort((a,b)=>timeToMin(a.start)-timeToMin(b.start))
+    }));
+  }
+
+  function getMonday(dateStr){
+    const dt = new Date(dateStr+'T00:00:00');
+    const day = dt.getDay();
+    const diff = dt.getDate() - day + (day===0 ? -6 : 1);
+    const mon = new Date(dt.setDate(diff));
+    return mon.toISOString().slice(0,10);
+  }
+  function addDays(dateStr, n){
+    const dt = new Date(dateStr+'T00:00:00');
+    dt.setDate(dt.getDate()+n);
+    return dt.toISOString().slice(0,10);
+  }
+
+  function groupByAssignedWeek(sessions){
+    const map = {};
+    sessions.forEach(s=>{ const wk = s.week||0; (map[wk]=map[wk]||[]).push(s); });
+    return Object.keys(map).map(Number).sort((a,b)=>a-b).map(weekNum=>({ weekNum, items: map[weekNum] }));
+  }
+
+  function sessionCardHTML(s){
+    const conflicts = findConflicts(s, s.id);
+    const conflictTag = conflicts.length ? `<span class="s-tag conflict">clash &times; ${conflicts.length}</span>` : '';
+    return `
+      <div class="session-card">
+        <div class="s-week">Wk ${s.week||'—'}</div>
+        <div class="s-time">${fmtTime(s.start)}<br>${fmtTime(s.end)}</div>
+        <div class="s-bar" style="background:${catColor(s.type)}"></div>
+        <div class="s-main">
+          <div class="course">${displayTitle(s)}</div>
+          <div class="meta">${s.faculty ? '<b>'+s.faculty+'</b> &middot; ' : ''}${s.venue||'—'}</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <span class="s-tag" style="background:${catColor(s.type)}; color:${catText(s.type)}">${s.type}</span>
+          ${conflictTag}
+        </div>
+        <button class="del-btn" data-id="${s.id}" title="Remove">&times;</button>
+      </div>`;
+  }
+
+  function agendaHTML(sessions, emptyMsg){
+    if (!sessions.length) return `<div class="empty"><b>Nothing logged yet</b>${emptyMsg}</div>`;
+    const groups = groupByDate(sessions);
+    return groups.map(g=>`
+      <div class="day-group">
+        <div class="day-head"><span>${fmtDate(g.date)}</span><span>${g.items.length} session${g.items.length>1?'s':''}</span></div>
+        ${g.items.map(s=>sessionCardHTML(s)).join('')}
+      </div>`).join('');
+  }
+
+  function chipHTML(s){
+    const isHoliday = s.type==='Holiday';
+    if (isHoliday){
+      return `<div class="chip" style="background:${catColor('Holiday')}; color:${catText('Holiday')}">
+        <div class="c">${displayTitle(s)}</div>
+        <div class="m">Holiday — no sessions</div>
+      </div>`;
+    }
+    const bg = courseColor(s.course);
+    return `<div class="chip" style="background:${bg}; color:#fff">
+      <div class="c">${displayTitle(s)}</div>
+      ${s.faculty ? `<div class="m">${s.faculty}</div>` : ''}
+      ${s.venue ? `<div class="m">${s.venue}</div>` : ''}
+      <div class="t">${fmtTimeShort(s.start)}&ndash;${fmtTimeShort(s.end)}</div>
+    </div>`;
+  }
+
+  function weekGridHTML(sessions, emptyMsg){
+    if (!sessions.length) return `<div class="empty"><b>Nothing scheduled yet</b>${emptyMsg}</div>`;
+    const weeks = groupByAssignedWeek(sessions);
+    return weeks.map(w=>{
+      const dates = w.items.map(s=>s.date).sort();
+      const monday = getMonday(dates[0]);
+      const sunday = addDays(monday, 6);
+      const byDate = {};
+      w.items.forEach(s=>{ (byDate[s.date]=byDate[s.date]||[]).push(s); });
+      const days = [];
+      for(let i=0;i<7;i++){
+        const d = addDays(monday, i);
+        const dt = new Date(d+'T00:00:00');
+        const items = (byDate[d]||[]).sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
+        days.push({d, dt, items});
+      }
+      const rangeLabel = new Date(monday+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) +
+                    ' – ' + new Date(sunday+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric', year:'numeric'});
+      return `
+        <div class="week-block">
+          <div class="week-head"><span class="wk-num">Week ${w.weekNum}</span><span class="wk-range">${rangeLabel}</span></div>
+          <div class="week-scroll"><div class="week-grid">
+            ${days.map(day=>{
+              const dow = day.dt.getDay();
+              const isSunday = dow===0;
+              const isSaturday = dow===6;
+              const hasHoliday = day.items.some(it=>it.type==='Holiday');
+              let cls='';
+              if (isSunday) cls='yellow-day';
+              else if (isSaturday && hasHoliday) cls='yellow-day';
+              else if (isSaturday) cls='weekend';
+              return `<div class="week-day ${cls}">
+                <div class="week-day-head">${day.dt.toLocaleDateString('en-US',{weekday:'short'})}<span class="dnum">${day.dt.getDate()}</span></div>
+                ${day.items.length ? day.items.map(chipHTML).join('') : '<div class="day-empty">–</div>'}
+              </div>`;
+            }).join('')}
+          </div></div>
+        </div>`;
+    }).join('');
+  }
+
+  function legendHTML(){
+    return Object.entries(CATS).map(([k,v])=>`
+      <div class="legend-item"><span class="legend-dot" style="background:${v.color}"></span>${v.label}</div>
+    `).join('');
+  }
+
+  function termPills(active, action){
+    return TERMS.map(t=>`<span class="term-pill ${t===active?'active':''}" data-term="${t}" data-action="${action}">${t}</span>`).join('');
+  }
+
+  function render(){
+    renderTabs();
+    renderAdmin();
+    renderFellow();
+    renderSummary();
+  }
+
+  function renderTabs(){
+    const roles = [
+      {id:'admin', label:'Academic Team'},
+      {id:'fellow', label:'Fellows'},
+      {id:'summary', label:'Team Summary'}
+    ];
+    document.getElementById('tabs').innerHTML = roles.map(r=>
+      `<button class="tab ${currentRole===r.id?'active':''}" data-role="${r.id}">${r.label}</button>`
+    ).join('');
+    document.querySelectorAll('.tab').forEach(btn=>{
+      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); };
+    });
+    showPanel();
+  }
+  function showPanel(){
+    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.role===currentRole));
+    ['admin','fellow','summary'].forEach(r=>{
+      document.getElementById('panel-'+r).classList.toggle('active', r===currentRole);
+    });
+  }
+
+  function renderAdmin(){
+    document.getElementById('a-term').innerHTML = TERMS.map(t=>`<option ${t===adminTerm?'selected':''}>${t}</option>`).join('');
+    document.getElementById('a-week').innerHTML = WEEKS.map(w=>`<option value="${w}">Week ${w}</option>`).join('');
+    document.getElementById('a-type-hint').textContent = TYPE_HINTS[document.getElementById('a-type').value] || '';
+    document.getElementById('a-term-strip').innerHTML = termPills(adminTerm, 'admin-term');
+    document.getElementById('a-term-label').textContent = adminTerm;
+
+    const sessions = state.sessions.filter(s=>s.term===adminTerm);
+    document.getElementById('a-agenda').innerHTML = agendaHTML(sessions, `<br>Add the first session for ${adminTerm} using the form on the left.`);
+
+    document.querySelectorAll('.term-pill[data-action="admin-term"]').forEach(el=>{
+      el.onclick = ()=>{ adminTerm = el.dataset.term; renderAdmin(); };
+    });
+    document.querySelectorAll('#a-agenda .del-btn').forEach(btn=>{
+      btn.onclick = async ()=>{
+        state.sessions = state.sessions.filter(s=>s.id!==btn.dataset.id);
+        await saveState(); render();
+      };
+    });
+  }
+
+  document.getElementById('a-type').onchange = ()=>{
+    document.getElementById('a-type-hint').textContent = TYPE_HINTS[document.getElementById('a-type').value] || '';
+    const isHoliday = document.getElementById('a-type').value === 'Holiday';
+    document.getElementById('a-course-lbl-extra').textContent = isHoliday ? '(holiday name)' : '';
+  };
+
+  document.getElementById('a-submit').onclick = async ()=>{
+    const type = document.getElementById('a-type').value;
+    const term = document.getElementById('a-term').value;
+    const week = parseInt(document.getElementById('a-week').value, 10);
+    const course = document.getElementById('a-course').value.trim();
+    const date = document.getElementById('a-date').value;
+    const fb = document.getElementById('a-feedback');
+    if (!course || !date){
+      fb.innerHTML = `<div class="warn">Session title and date are required.</div>`;
+      return;
+    }
+    const s = {
+      id: uid(), term, week, course, type,
+      faculty: document.getElementById('a-faculty').value.trim(),
+      venue: document.getElementById('a-venue').value.trim(),
+      date,
+      start: document.getElementById('a-start').value,
+      end: document.getElementById('a-end').value
+    };
+    if (type==='Core'){
+      const existing = state.sessions.filter(x=>x.term===term && x.type==='Core' && x.course.trim().toLowerCase()===course.trim().toLowerCase());
+      s.number = existing.length + 1;
+    }
+    const conflicts = findConflicts(s, null);
+    state.sessions.push(s);
+    await saveState();
+    adminTerm = term;
+    if (conflicts.length){
+      fb.innerHTML = `<div class="warn">Added — but this clashes with ${conflicts.map(displayTitle).join(', ')} on the same date. Check faculty/venue overlap.</div>`;
+    } else {
+      fb.innerHTML = `<div class="ok">Added with no clashes. Every view has updated automatically.</div>`;
+    }
+    ['a-course','a-faculty','a-venue'].forEach(id=>document.getElementById(id).value='');
+    renderAdmin(); renderFellow(); renderSummary();
+  };
+
+  document.getElementById('a-reset').onclick = resetDemo;
+
+  function renderFellow(){
+    document.getElementById('fellow-legend').innerHTML = legendHTML();
+    document.getElementById('fellow-term-strip').innerHTML = termPills(fellowTerm, 'fellow-term');
+    const sessions = state.sessions.filter(s=>s.term===fellowTerm);
+    document.getElementById('fellow-weeks').innerHTML = weekGridHTML(sessions, `<br>Nothing scheduled for ${fellowTerm} yet.`);
+    document.querySelectorAll('.term-pill[data-action="fellow-term"]').forEach(el=>{
+      el.onclick = ()=>{ fellowTerm = el.dataset.term; renderFellow(); };
+    });
+  }
+
+  function renderSummary(){
+    const total = state.sessions.length;
+    const today = new Date().toISOString().slice(0,10);
+    let clashCount = 0;
+    state.sessions.forEach(s=>{ if (findConflicts(s, s.id).length) clashCount++; });
+    const holidaysUpcoming = state.sessions.filter(s=>s.type==='Holiday' && s.date>=today).length;
+    const guestUpcoming = state.sessions.filter(s=>s.type==='Guest' && s.date>=today).length;
+
+    document.getElementById('summary-stats').innerHTML = `
+      <div class="stat"><div class="num">${total}</div><div class="lbl">Total sessions logged</div></div>
+      <div class="stat"><div class="num" style="color:${clashCount?'var(--conflict)':'var(--confirm)'}">${clashCount}</div><div class="lbl">Unresolved clashes</div></div>
+      <div class="stat"><div class="num">${holidaysUpcoming}</div><div class="lbl">Holidays ahead</div></div>
+      <div class="stat"><div class="num">${guestUpcoming}</div><div class="lbl">Guest sessions ahead</div></div>
+    `;
+
+    const upcoming = state.sessions
+      .filter(s=> (s.type==='Holiday' || s.type==='Guest') && s.date>=today)
+      .sort((a,b)=>a.date.localeCompare(b.date))
+      .slice(0,6);
+    document.getElementById('summary-upcoming').innerHTML = upcoming.length ? upcoming.map(s=>`
+      <div class="upcoming-item">
+        <span class="u-date">${fmtDate(s.date)}</span>
+        <span class="u-title">${displayTitle(s)}</span>
+        <span class="s-tag" style="background:${catColor(s.type)}; color:${catText(s.type)}">${s.type}</span>
+      </div>`).join('') : `<div class="empty" style="padding:16px;">No holidays or guest sessions logged ahead of today.</div>`;
+
+    const counts = {};
+    state.sessions.forEach(s=>{ counts[s.type] = (counts[s.type]||0)+1; });
+    document.getElementById('summary-catbreakdown').innerHTML = Object.keys(CATS).map(k=>`
+      <div class="cat-pill" style="background:${CATS[k].color}; color:${CATS[k].text}">${k}: ${counts[k]||0}</div>
+    `).join('');
+  }
+
+  loadState();
+})();
+</script>
