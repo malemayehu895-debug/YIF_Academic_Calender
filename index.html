@@ -253,14 +253,40 @@
   .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  .auth-screen{ max-width:380px; margin:80px auto; text-align:center; }
+  .auth-screen h1{ font-family:'Fraunces', serif; font-size:26px; color:var(--blue); margin-bottom:4px; }
+  .auth-screen .sub{ font-size:12.5px; color:var(--blue-soft); margin-bottom:20px; }
+  .auth-screen input{ text-align:center; }
+  .auth-msg{ margin-top:14px; font-size:12px; }
+  .who-am-i{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--blue-soft); display:flex; align-items:center; gap:10px; }
+  .who-am-i .role-pill{ background:var(--blue); color:#fff; padding:2px 9px; border-radius:20px; font-weight:600; }
+  .logout-link{ color:var(--red); cursor:pointer; text-decoration:underline; }
+</style>
+
 <div id="app">
   <div class="wrap">
+
+    <!-- LOGIN GATE -->
+    <div id="auth-screen" class="auth-screen">
+      <h1>YIF Academic Calendar</h1>
+      <div class="sub">Sign in with your Ashoka email to continue</div>
+      <input id="auth-email" type="email" placeholder="you@ashoka.edu.in">
+      <button class="primary" id="auth-send">Send login link</button>
+      <div class="auth-msg" id="auth-msg"></div>
+    </div>
+
+    <!-- MAIN APP (hidden until signed in) -->
+    <div id="app-main" style="display:none;">
 
     <div class="masthead">
       <div>
         <div class="masthead-eyebrow">Young India Fellowship &middot; Ashoka University</div>
         <h1>YIF Academic Calendar</h1>
       </div>
+      <div class="who-am-i" id="who-am-i"></div>
     </div>
 
     <div class="tabs" id="tabs"></div>
@@ -317,7 +343,6 @@
         <div>
           <div class="toolbar">
             <div class="term-strip" id="a-term-strip"></div>
-            <button class="ghost" id="a-reset">Reset demo data</button>
           </div>
           <div class="card">
             <h2>Confirmed sessions<span id="a-term-label">Term 1</span></h2>
@@ -360,6 +385,8 @@
       </div>
     </div>
 
+    </div><!-- /app-main -->
+
   </div>
 </div>
 
@@ -390,50 +417,62 @@
     Holiday: 'Non-teaching day — type the holiday name as the title (e.g. "Independence Day").'
   };
 
-  const SEED = {
-    sessions: [
-      {id:'s1', term:'Term 1', week:1, course:'Check-In', type:'Guest', faculty:'', venue:'Campus', date:'2026-07-18', start:'09:00', end:'10:00'},
-      {id:'s2', term:'Term 1', week:1, course:'Orientation', type:'Guest', faculty:'', venue:'Campus', date:'2026-07-20', start:'09:00', end:'12:00'},
-      {id:'s3', term:'Term 1', week:2, course:'Statistical Thinking and Problem Solving in Modern Life', type:'Core', number:1, faculty:'Santosh S Venkatesh', venue:'Takshila', date:'2026-07-27', start:'10:00', end:'12:00'},
-      {id:'s4', term:'Term 1', week:2, course:'Gift, Commodity, Value: Anthropology of Exchange', type:'CIE', faculty:'Mekhala Krishnamurthy', venue:'AC04-304', date:'2026-07-28', start:'10:00', end:'12:00'},
-      {id:'s5', term:'Term 1', week:2, course:'Statistical Thinking and Problem Solving in Modern Life', type:'Core', number:2, faculty:'Santosh S Venkatesh', venue:'Takshila', date:'2026-07-29', start:'10:00', end:'12:00'},
-      {id:'s6', term:'Term 1', week:2, course:'Gift, Commodity, Value: Anthropology of Exchange', type:'CIE', faculty:'Mekhala Krishnamurthy', venue:'AC04-304', date:'2026-07-30', start:'10:00', end:'12:00'},
-      {id:'s7', term:'Term 1', week:2, course:'Design Thinking Workshop', type:'Elective', faculty:'Priya Nair', venue:'AC04-304', date:'2026-07-30', start:'10:30', end:'11:30'},
-      {id:'s9', term:'Term 1', week:3, course:'Foundations of Data Storytelling', type:'DS', faculty:'Ariun Rao', venue:'AC03-201', date:'2026-08-04', start:'14:00', end:'16:00'},
-      {id:'s10', term:'Term 1', week:3, course:'Talk: Public Policy in Practice', type:'Guest', faculty:'Guest Speaker', venue:'Amphitheatre', date:'2026-08-05', start:'16:00', end:'17:30'},
-      {id:'s8', term:'Term 1', week:5, course:'Independence Day', type:'Holiday', faculty:'', venue:'', date:'2026-08-15', start:'00:00', end:'23:59'}
-    ],
-    deadlines: [
-      {id:'dl1', term:'Term 1', week:2, text:'Stats problem set #1 due Friday, 6pm'},
-      {id:'dl2', term:'Term 1', week:3, text:'Data Storytelling project proposal due Sunday'}
-    ]
-  };
+  // ---- Supabase setup ----
+  const SUPABASE_URL = 'https://vhpitlbcmyzkwjbprrxh.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_nRXbRzNr4jxyQlOIafy-lA__aMjYoZy';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let state = null;
+  const ROLE_LABELS = { academic_team:'Academic Team', fellow:'Fellow', director:'Program Director' };
+  const ROLE_TABS = { academic_team:['admin','fellow','summary'], fellow:['fellow'], director:['summary'] };
+
+  let state = { sessions: [], deadlines: [] };
   let currentRole = 'admin';
+  let myRole = null;
   let adminTerm = 'Term 1';
   let fellowTerm = 'Term 1';
 
   function uid(){ return 'x' + Math.random().toString(36).slice(2,9); }
 
-  async function loadState(){
-    try{
-      const res = await window.storage.get(STORAGE_KEY, true);
-      state = JSON.parse(res.value);
-      if (!state.deadlines) state.deadlines = [];
-    }catch(e){
-      state = JSON.parse(JSON.stringify(SEED));
-      await saveState();
-    }
-    render();
+  // Map DB rows <-> the field names the rest of the app already uses (start/end, not start_time/end_time)
+  function rowToSession(r){
+    return { id:r.id, term:r.term, week:r.week, course:r.course, type:r.type, number:r.number,
+      faculty:r.faculty||'', venue:r.venue||'', date:r.date, start:r.start_time, end:r.end_time };
   }
-  async function saveState(){
-    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state), true); }
-    catch(e){ console.error('save failed', e); }
+  function sessionToRow(s){
+    return { term:s.term, week:s.week, course:s.course, type:s.type, number:s.number||null,
+      faculty:s.faculty||null, venue:s.venue||null, date:s.date, start_time:s.start, end_time:s.end };
   }
-  async function resetDemo(){
-    state = JSON.parse(JSON.stringify(SEED));
-    await saveState(); render();
+
+  async function loadData(){
+    const [{data:sessRows, error:sessErr}, {data:dlRows, error:dlErr}] = await Promise.all([
+      sb.from('sessions').select('*'),
+      sb.from('deadlines').select('*')
+    ]);
+    if (sessErr) console.error('sessions load error', sessErr);
+    if (dlErr) console.error('deadlines load error', dlErr);
+    state.sessions = (sessRows||[]).map(rowToSession);
+    state.deadlines = (dlRows||[]).map(r=>({ id:r.id, term:r.term, week:r.week, text:r.text }));
+  }
+
+  async function addSessionDB(s){
+    const { data, error } = await sb.from('sessions').insert(sessionToRow(s)).select().single();
+    if (error){ alert('Could not save: ' + error.message); return null; }
+    return rowToSession(data);
+  }
+  async function deleteSessionDB(id){
+    const { error } = await sb.from('sessions').delete().eq('id', id);
+    if (error){ alert('Could not delete: ' + error.message); return false; }
+    return true;
+  }
+  async function addDeadlineDB(term, week, text){
+    const { data, error } = await sb.from('deadlines').insert({ term, week, text }).select().single();
+    if (error){ alert('Could not save: ' + error.message); return null; }
+    return { id:data.id, term:data.term, week:data.week, text:data.text };
+  }
+  async function deleteDeadlineDB(id){
+    const { error } = await sb.from('deadlines').delete().eq('id', id);
+    if (error){ alert('Could not delete: ' + error.message); return false; }
+    return true;
   }
 
   function timeToMin(t){ const [h,m] = t.split(':').map(Number); return h*60+m; }
@@ -632,11 +671,14 @@
   }
 
   function renderTabs(){
-    const roles = [
+    const allTabs = [
       {id:'admin', label:'Academic Team'},
       {id:'fellow', label:'Fellows'},
       {id:'summary', label:'Team Summary'}
     ];
+    const allowed = ROLE_TABS[myRole] || ['fellow'];
+    const roles = allTabs.filter(t=>allowed.includes(t.id));
+    if (!allowed.includes(currentRole)) currentRole = allowed[0];
     document.getElementById('tabs').innerHTML = roles.map(r=>
       `<button class="tab ${currentRole===r.id?'active':''}" data-role="${r.id}">${r.label}</button>`
     ).join('');
@@ -678,14 +720,14 @@
     });
     document.querySelectorAll('#a-agenda .del-btn').forEach(btn=>{
       btn.onclick = async ()=>{
-        state.sessions = state.sessions.filter(s=>s.id!==btn.dataset.id);
-        await saveState(); render();
+        const ok = await deleteSessionDB(btn.dataset.id);
+        if (ok){ state.sessions = state.sessions.filter(s=>s.id!==btn.dataset.id); render(); }
       };
     });
     document.querySelectorAll('#d-list .del-btn').forEach(btn=>{
       btn.onclick = async ()=>{
-        state.deadlines = state.deadlines.filter(d=>d.id!==btn.dataset.dlid);
-        await saveState(); render();
+        const ok = await deleteDeadlineDB(btn.dataset.dlid);
+        if (ok){ state.deadlines = state.deadlines.filter(d=>d.id!==btn.dataset.dlid); render(); }
       };
     });
   }
@@ -720,8 +762,9 @@
       s.number = existing.length + 1;
     }
     const conflicts = findConflicts(s, null);
-    state.sessions.push(s);
-    await saveState();
+    const saved = await addSessionDB(s);
+    if (!saved) return;
+    state.sessions.push(saved);
     adminTerm = term;
     if (conflicts.length){
       fb.innerHTML = `<div class="warn">Added — but this clashes with ${conflicts.map(displayTitle).join(', ')} on the same date. Check faculty/venue overlap.</div>`;
@@ -737,13 +780,12 @@
     const week = parseInt(document.getElementById('d-week').value, 10);
     const text = document.getElementById('d-text').value.trim();
     if (!text) return;
-    state.deadlines.push({ id: uid(), term, week, text });
-    await saveState();
+    const saved = await addDeadlineDB(term, week, text);
+    if (!saved) return;
+    state.deadlines.push(saved);
     document.getElementById('d-text').value = '';
     render();
   };
-
-  document.getElementById('a-reset').onclick = resetDemo;
 
   function renderFellow(){
     document.getElementById('fellow-legend').innerHTML = legendHTML();
@@ -795,6 +837,50 @@
     `).join('');
   }
 
-  loadState();
+  // ---- Auth flow ----
+  function showAuthScreen(msg){
+    document.getElementById('auth-screen').style.display = 'block';
+    document.getElementById('app-main').style.display = 'none';
+    if (msg) document.getElementById('auth-msg').innerHTML = msg;
+  }
+  async function showApp(user){
+    const { data: profile, error } = await sb.from('profiles').select('role,email').eq('id', user.id).single();
+    if (error || !profile){
+      showAuthScreen('<div class="warn">Could not load your profile. Try refreshing, or contact the Academic Team.</div>');
+      return;
+    }
+    myRole = profile.role;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-main').style.display = 'block';
+    document.getElementById('who-am-i').innerHTML =
+      `${profile.email} <span class="role-pill">${ROLE_LABELS[myRole]||myRole}</span> <span class="logout-link" id="logout-btn">Sign out</span>`;
+    document.getElementById('logout-btn').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+    await loadData();
+    render();
+  }
+
+  document.getElementById('auth-send').onclick = async ()=>{
+    const email = document.getElementById('auth-email').value.trim();
+    const msgEl = document.getElementById('auth-msg');
+    if (!email){ msgEl.innerHTML = '<div class="warn">Enter your email first.</div>'; return; }
+    if (!/@ashoka\.edu\.in$/i.test(email)){
+      msgEl.innerHTML = '<div class="warn">Only @ashoka.edu.in email addresses can sign in.</div>';
+      return;
+    }
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
+    if (error){ msgEl.innerHTML = `<div class="warn">${error.message}</div>`; return; }
+    msgEl.innerHTML = '<div class="ok">Check your inbox — click the link we just sent to sign in.</div>';
+  };
+
+  sb.auth.onAuthStateChange((event, session)=>{
+    if (session && session.user){ showApp(session.user); }
+    else { showAuthScreen(); }
+  });
+
+  (async ()=>{
+    const { data:{ session } } = await sb.auth.getSession();
+    if (session && session.user){ showApp(session.user); }
+    else { showAuthScreen(); }
+  })();
 })();
 </script>
