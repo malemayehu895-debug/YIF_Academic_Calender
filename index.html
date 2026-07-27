@@ -844,9 +844,15 @@
     if (msg) document.getElementById('auth-msg').innerHTML = msg;
   }
   async function showApp(user){
-    const { data: profile, error } = await sb.from('profiles').select('role,email').eq('id', user.id).single();
+    let profile = null, error = null;
+    for (let attempt=0; attempt<4; attempt++){
+      const res = await sb.from('profiles').select('role,email').eq('id', user.id).single();
+      profile = res.data; error = res.error;
+      if (profile) break;
+      await new Promise(r=>setTimeout(r, 900)); // profile row can take a moment right after first sign-up
+    }
     if (error || !profile){
-      showAuthScreen('<div class="warn">Could not load your profile. Try refreshing, or contact the Academic Team.</div>');
+      showAuthScreen('<div class="warn">Still setting up your account — please wait a few seconds and click Send login link again.</div>');
       return;
     }
     myRole = profile.role;
