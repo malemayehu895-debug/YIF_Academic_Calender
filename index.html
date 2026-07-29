@@ -608,11 +608,14 @@
       const normal = allItems.filter(s=>s.type!=='Holiday');
       const holidays = allItems.filter(s=>s.type==='Holiday');
       const dates = allItems.map(s=>s.date).sort();
-      const monday = getMonday(dates[0]);
-      const sunday = addDays(monday, 6);
+      const earliestMonday = getMonday(dates[0]);
+      const latestMonday = getMonday(dates[dates.length-1]);
+      const monday = earliestMonday;
+      const sunday = addDays(latestMonday, 6); // covers the full span even if entries stretch across calendar weeks
 
+      const totalDays = Math.round((new Date(sunday) - new Date(monday)) / 86400000) + 1;
       const days = [];
-      for(let i=0;i<7;i++){
+      for(let i=0;i<totalDays;i++){
         const d = addDays(monday, i);
         const dt = new Date(d+'T00:00:00');
         days.push({d, dt});
@@ -728,7 +731,6 @@
         <select class="t-role">
           <option value="fellow" ${p.role==='fellow'?'selected':''}>Fellow</option>
           <option value="academic_team" ${p.role==='academic_team'?'selected':''}>Academic Team</option>
-          <option value="director" ${p.role==='director'?'selected':''}>Program Director</option>
         </select>
         <button class="t-save">Save</button>
       </div>`).join('');
