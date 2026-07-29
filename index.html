@@ -368,9 +368,9 @@
             <input id="a-faculty" placeholder="e.g. Santosh Venkatesh (leave blank for Holiday)">
             <div class="row2">
               <div><label>Start date</label><input id="a-date" type="date"></div>
-              <div><label>End date <span class="hint-sm" style="display:inline;margin:0;">(optional)</span></label><input id="a-end-date" type="date"></div>
+              <div id="a-end-date-wrap"><label>End date <span class="hint-sm" style="display:inline;margin:0;">(optional)</span></label><input id="a-end-date" type="date"></div>
             </div>
-            <div class="hint-sm">Leave end date blank for a single-day entry. Set it for multi-day holidays, breaks, or modules — it'll appear on every day in between.</div>
+            <div class="hint-sm" id="a-end-date-hint">Leave end date blank for a single-day entry. Set it for multi-day holidays or "Others" entries — it'll appear on every day in between.</div>
             <label>Venue</label>
             <input id="a-venue" placeholder="e.g. Takshila">
             <div class="row2">
@@ -859,6 +859,7 @@
     document.getElementById('a-end').value = s.end;
     document.getElementById('a-type-hint').textContent = TYPE_HINTS[s.type] || '';
     document.getElementById('a-course-lbl-extra').textContent = s.type==='Holiday' ? '(holiday name)' : '';
+    updateEndDateVisibility();
   }
 
   function startEditSession(id){
@@ -963,10 +964,20 @@
     });
   }
 
+  const END_DATE_ALLOWED = ['Holiday','Others'];
+  function updateEndDateVisibility(){
+    const type = document.getElementById('a-type').value;
+    const allowed = END_DATE_ALLOWED.includes(type);
+    document.getElementById('a-end-date-wrap').style.display = allowed ? 'block' : 'none';
+    document.getElementById('a-end-date-hint').style.display = allowed ? 'block' : 'none';
+    if (!allowed) document.getElementById('a-end-date').value = '';
+  }
+
   document.getElementById('a-type').onchange = ()=>{
     document.getElementById('a-type-hint').textContent = TYPE_HINTS[document.getElementById('a-type').value] || '';
     const isHoliday = document.getElementById('a-type').value === 'Holiday';
     document.getElementById('a-course-lbl-extra').textContent = isHoliday ? '(holiday name)' : '';
+    updateEndDateVisibility();
   };
 
   document.getElementById('a-cancel-edit').onclick = cancelEditSession;
@@ -977,7 +988,7 @@
     const week = parseInt(document.getElementById('a-week').value, 10);
     const course = document.getElementById('a-course').value.trim();
     const date = document.getElementById('a-date').value;
-    const endDateInput = document.getElementById('a-end-date').value;
+    const endDateInput = END_DATE_ALLOWED.includes(type) ? document.getElementById('a-end-date').value : '';
     const fb = document.getElementById('a-feedback');
     if (!course || !date){
       fb.innerHTML = `<div class="warn">Session title and date are required.</div>`;
@@ -1152,6 +1163,7 @@
     document.getElementById('logout-btn').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
     await loadData();
     render();
+    updateEndDateVisibility();
   }
 
   document.getElementById('auth-send').onclick = async ()=>{
