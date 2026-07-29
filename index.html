@@ -251,6 +251,14 @@
   .cat-pill{ display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:5px 10px; border-radius:20px; }
 
   .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
+
+  .team-row{ display:grid; grid-template-columns:1fr 180px 90px; gap:10px; align-items:center; padding:10px 4px; border-bottom:1px solid var(--rule-soft); }
+  .team-row:last-child{border-bottom:none;}
+  .team-row .t-email{ font-size:13px; color:var(--charcoal); }
+  .team-row select{ padding:6px 8px; font-size:12px; }
+  .team-row button{ background:var(--blue); color:#fff; border:none; padding:7px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; border-radius:2px; cursor:pointer; }
+  .team-row button:hover{ background:#002D52; }
+  .team-row .saved{ color:var(--confirm); font-size:10.5px; font-family:'IBM Plex Mono',monospace; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -385,6 +393,19 @@
       </div>
     </div>
 
+    <!-- MANAGE TEAM (Academic Team only) -->
+    <div class="panel" id="panel-team">
+      <div class="card">
+        <h2>Manage team access<span>Change anyone's role once they've signed in at least once</span></h2>
+        <div class="hint-sm" style="margin-bottom:12px;">Changes apply the moment they refresh the page — no need to sign out.</div>
+        <div id="team-list"></div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:26px; padding-top:16px; border-top:1px solid var(--rule-soft); font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--blue-soft);">
+      Developed by Marta Assefa &middot; marta.alemayehu.assefa@gmail.com
+    </div>
+
     </div><!-- /app-main -->
 
   </div>
@@ -423,7 +444,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const ROLE_LABELS = { academic_team:'Academic Team', fellow:'Fellow', director:'Program Director' };
-  const ROLE_TABS = { academic_team:['admin','fellow','summary'], fellow:['fellow'], director:['summary'] };
+  const ROLE_TABS = { academic_team:['admin','fellow','summary','team'], fellow:['fellow'], director:['summary'] };
 
   let state = { sessions: [], deadlines: [] };
   let currentRole = 'admin';
@@ -674,7 +695,8 @@
     const allTabs = [
       {id:'admin', label:'Academic Team'},
       {id:'fellow', label:'Fellows'},
-      {id:'summary', label:'Team Summary'}
+      {id:'summary', label:'Team Summary'},
+      {id:'team', label:'Manage Team'}
     ];
     const allowed = ROLE_TABS[myRole] || ['fellow'];
     const roles = allTabs.filter(t=>allowed.includes(t.id));
@@ -683,14 +705,44 @@
       `<button class="tab ${currentRole===r.id?'active':''}" data-role="${r.id}">${r.label}</button>`
     ).join('');
     document.querySelectorAll('.tab').forEach(btn=>{
-      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); };
+      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); if (currentRole==='team') renderTeam(); };
     });
     showPanel();
   }
   function showPanel(){
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.role===currentRole));
-    ['admin','fellow','summary'].forEach(r=>{
+    ['admin','fellow','summary','team'].forEach(r=>{
       document.getElementById('panel-'+r).classList.toggle('active', r===currentRole);
+    });
+  }
+
+  async function renderTeam(){
+    const el = document.getElementById('team-list');
+    el.innerHTML = `<div class="empty" style="padding:16px;">Loading team…</div>`;
+    const { data, error } = await sb.from('profiles').select('id,email,role').order('email');
+    if (error){ el.innerHTML = `<div class="warn">Could not load the team list: ${error.message}</div>`; return; }
+    if (!data.length){ el.innerHTML = `<div class="empty" style="padding:16px;">No one has signed in yet.</div>`; return; }
+    el.innerHTML = data.map(p=>`
+      <div class="team-row" data-id="${p.id}">
+        <span class="t-email">${p.email}</span>
+        <select class="t-role">
+          <option value="fellow" ${p.role==='fellow'?'selected':''}>Fellow</option>
+          <option value="academic_team" ${p.role==='academic_team'?'selected':''}>Academic Team</option>
+          <option value="director" ${p.role==='director'?'selected':''}>Program Director</option>
+        </select>
+        <button class="t-save">Save</button>
+      </div>`).join('');
+    el.querySelectorAll('.team-row').forEach(row=>{
+      row.querySelector('.t-save').onclick = async ()=>{
+        const id = row.dataset.id;
+        const newRole = row.querySelector('.t-role').value;
+        const btn = row.querySelector('.t-save');
+        btn.textContent = '...';
+        const { error } = await sb.from('profiles').update({ role:newRole }).eq('id', id);
+        if (error){ alert('Could not update: ' + error.message); btn.textContent='Save'; return; }
+        btn.textContent = 'Saved';
+        setTimeout(()=>{ btn.textContent='Save'; }, 1500);
+      };
     });
   }
 
