@@ -1,19 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YIF Academic Calendar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
   :root{
-    --blue:#003F72;
+    --blue:#1f4e79;
     --blue-soft:#3D6690;
-    --red:#C8102E;
+    --red:#c8102e;
+    --grey:#f2f2f2;
     --charcoal:#2B2B2B;
     --paper:#FFFFFF;
     --paper-raised:#F7F8FA;
     --rule:#D7DEE5;
     --rule-soft:#E6EBF0;
     --confirm:#3F6B4C;
-    --yellow:#F4D35E;
-    --yellow-tint:#FCF2C6;
+    --amber:#D97706;
+    --amber-tint:#FEF3C7;
   }
   *{box-sizing:border-box;}
   body{margin:0;}
@@ -53,17 +60,6 @@
     letter-spacing:-0.01em;
     color:var(--blue);
   }
-  .stamp{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
-    color:var(--red);
-    border:1px solid var(--red);
-    padding:5px 10px;
-    border-radius:2px;
-    text-align:center;
-    line-height:1.5;
-    white-space:nowrap;
-  }
 
   .tabs{
     display:flex;
@@ -97,7 +93,8 @@
     border:1px solid var(--rule-soft);
     border-radius:3px;
     padding:18px;
-    box-shadow:0 1px 0 rgba(0,63,114,0.05);
+    box-shadow:0 1px 0 rgba(31,78,121,0.05);
+    margin-bottom:20px;
   }
   .card h2{
     font-family:'Fraunces', serif;
@@ -137,14 +134,9 @@
     padding:10px 14px; font-family:'IBM Plex Mono', monospace; font-size:12px;
     letter-spacing:0.06em; text-transform:uppercase; border-radius:2px; cursor:pointer; font-weight:600;
   }
-  button.primary:hover{background:#002D52;}
-  button.primary.red{ background:var(--red); }
-  button.primary.red:hover{ background:#A50D26; }
-  button.ghost{
-    background:none; border:1px solid var(--rule); color:var(--blue-soft); padding:6px 10px;
-    font-family:'IBM Plex Mono', monospace; font-size:11px; border-radius:2px; cursor:pointer;
-  }
-  button.ghost:hover{border-color:var(--blue);color:var(--blue);}
+  button.primary:hover{background:#153756;}
+  button.primary.amber{ background:var(--amber); }
+  button.primary.amber:hover{ background:#B45309; }
 
   .warn{ margin-top:12px; padding:10px 12px; background:#FBE9EC; border:1px solid var(--red); color:var(--red); font-size:12px; border-radius:2px; line-height:1.5; }
   .ok{ margin-top:12px; padding:10px 12px; background:#E7EFE8; border:1px solid var(--confirm); color:var(--confirm); font-size:12px; border-radius:2px; }
@@ -152,7 +144,7 @@
   .term-strip{ display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
   .term-pill{
     font-family:'IBM Plex Mono', monospace; font-size:11px; padding:6px 12px; border:1px solid var(--rule);
-    border-radius:20px; cursor:pointer; color:var(--blue-soft); background:var(--paper-raised); font-weight:600;
+    border-radius:20px; cursor:pointer; color:var(--blue-soft); background:var(--grey); font-weight:600;
   }
   .term-pill.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
 
@@ -176,17 +168,16 @@
   .s-bar{align-self:stretch; border-radius:2px;}
   .s-main .course{font-weight:600; font-size:13.5px; color:var(--charcoal);}
   .s-main .meta{font-size:11.5px; color:var(--blue-soft); margin-top:2px;}
-  .s-main .meta b{color:var(--charcoal);font-weight:500;}
   .s-tag{
     font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase;
     padding:2px 7px; border-radius:20px; white-space:nowrap; color:#fff;
   }
-  .s-tag.conflict{background:#FBE9EC; color:var(--red); border:1px solid var(--red);}
-  .del-btn{
-    background:none; border:1px solid var(--rule); color:var(--red); width:26px; height:26px;
-    border-radius:2px; cursor:pointer; font-size:14px; line-height:1;
+  .action-btn{
+    background:none; border:1px solid var(--rule); color:var(--blue-soft); width:26px; height:26px;
+    border-radius:2px; cursor:pointer; font-size:12px; line-height:1; display:inline-flex; align-items:center; justify-content:center;
   }
-  .del-btn:hover{ background:var(--red); color:#fff; border-color:var(--red); }
+  .action-btn:hover{ background:var(--blue); color:#fff; border-color:var(--blue); }
+  .action-btn.del:hover{ background:var(--red); color:#fff; border-color:var(--red); }
 
   .empty{ padding:30px 16px; text-align:center; color:var(--blue-soft); font-size:13px; border:1px dashed var(--rule); border-radius:3px; }
   .empty b{display:block; color:var(--blue); font-family:'Fraunces',serif; font-size:15px; margin-bottom:4px;}
@@ -198,95 +189,67 @@
     font-size:11px; letter-spacing:0.06em; text-transform:uppercase; display:flex; justify-content:space-between; align-items:baseline;
   }
   .week-head .wk-num{ font-family:'Fraunces', serif; font-size:16px; text-transform:none; letter-spacing:0; color:#fff; font-weight:700; }
-  .week-head .wk-range{ color:#F2F7FC; font-size:10px; }
 
   .week-table{ width:100%; border-collapse:collapse; table-layout:fixed; }
   .week-table th, .week-table td{ border:1px solid var(--rule-soft); vertical-align:top; padding:0; }
-  .wt-corner{ background:var(--blue); width:118px; color:#fff; font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; border-bottom:3px solid #002D52; }
-  .wt-day-head{ background:var(--blue); color:#fff; text-align:center; padding:9px 6px; border-bottom:3px solid #002D52; }
+  .wt-corner{ background:var(--blue); width:118px; color:#fff; font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; }
+  .wt-day-head{ background:var(--blue); color:#fff; text-align:center; padding:9px 6px; }
   .wt-day-head .dname{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; }
   .wt-day-head .ddate{ display:block; font-size:10px; color:#F2F7FC; margin-top:2px; font-family:'IBM Plex Mono', monospace; font-weight:600; }
-  .wt-day-head.yellow{ background:#B8941F; }
-  .wt-day-head .hname{ display:block; font-size:9.5px; color:#FCF2C6; margin-top:2px; font-weight:600; }
+  
   .week-table td.wt-time-cell{
     background:var(--blue); color:#fff; font-family:'IBM Plex Mono', monospace; font-weight:700;
     font-size:11.5px; text-align:center; padding:10px 6px; white-space:nowrap; vertical-align:middle;
   }
-  .wt-cell{ min-height:76px; height:76px; background:#F7F8FA; }
-  .wt-cell.yellow{ background:var(--yellow-tint); }
+  .wt-cell{ min-height:76px; height:76px; background:#F7F8FA; position:relative; }
   .wt-block{
     height:100%; padding:8px 9px; color:#fff; display:flex; flex-direction:column; justify-content:center;
     align-items:center; text-align:center; gap:2px;
   }
   .wt-block .course{ font-weight:700; font-size:11.5px; line-height:1.3; }
   .wt-block .meta{ font-size:10px; opacity:0.92; }
-  .wt-block .tag{
-    display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:8.5px; text-transform:uppercase;
-    background:rgba(255,255,255,0.25); padding:1px 6px; border-radius:8px; margin-top:4px; width:fit-content;
-  }
-  .wt-holiday-block{ height:100%; display:flex; align-items:center; justify-content:center; color:#5C4A0A; font-size:10px; font-weight:600; text-align:center; padding:6px; }
 
-  .week-deadlines{
-    background:#FBE9EC; border-top:1px solid var(--red); padding:9px 14px;
-    font-size:11.5px; color:var(--red); display:flex; gap:8px; align-items:flex-start;
+  /* Soft Amber Deadline Badge */
+  .wt-deadline-badge{
+    background:var(--amber-tint); border:1px solid var(--amber); color:var(--amber);
+    padding:4px 6px; border-radius:3px; font-size:10px; font-family:'IBM Plex Mono', monospace;
+    font-weight:600; margin:4px; text-align:left;
   }
-  .week-deadlines .flag{ font-weight:700; font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; white-space:nowrap; }
 
   .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:22px;}
   .stat{ background:var(--paper-raised); border:1px solid var(--rule-soft); border-radius:3px; padding:14px 16px; border-top:3px solid var(--blue); }
   .stat .num{font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:var(--blue);}
   .stat .lbl{font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--blue-soft); margin-top:2px;}
 
-  .upcoming-item{ display:flex; justify-content:space-between; align-items:center; padding:8px 4px; border-bottom:1px solid var(--rule-soft); font-size:12.5px; gap:8px; }
-  .upcoming-item:last-child{border-bottom:none;}
-  .upcoming-item .u-date{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--blue-soft); min-width:90px; font-weight:600; }
-  .upcoming-item .u-title{font-weight:600; flex:1;}
-
   .deadline-item{ display:flex; justify-content:space-between; align-items:center; padding:8px 4px; border-bottom:1px solid var(--rule-soft); font-size:12.5px; gap:8px; }
   .deadline-item:last-child{border-bottom:none;}
-  .deadline-item .d-wk{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#fff; background:var(--red); border-radius:10px; padding:2px 8px; font-weight:700; white-space:nowrap; }
-  .deadline-item .d-text{flex:1;}
+  .deadline-item .d-wk{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--amber); background:var(--amber-tint); border:1px solid var(--amber); border-radius:10px; padding:2px 8px; font-weight:700; white-space:nowrap; }
 
-  .cat-breakdown{ display:flex; flex-wrap:wrap; gap:8px; }
-  .cat-pill{ display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:5px 10px; border-radius:20px; }
+  .term-dist-table{ width:100%; border-collapse:collapse; margin-top:10px; }
+  .term-dist-table th, .term-dist-table td{ padding:8px 10px; border:1px solid var(--rule-soft); font-size:12px; text-align:left; }
+  .term-dist-table th{ background:var(--grey); color:var(--blue); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; font-size:11px; }
 
-  .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
-
-  .team-row{ display:grid; grid-template-columns:1fr 180px 90px; gap:10px; align-items:center; padding:10px 4px; border-bottom:1px solid var(--rule-soft); }
-  .team-row:last-child{border-bottom:none;}
-  .team-row .t-email{ font-size:13px; color:var(--charcoal); }
-  .team-row select{ padding:6px 8px; font-size:12px; }
-  .team-row button{ background:var(--blue); color:#fff; border:none; padding:7px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; border-radius:2px; cursor:pointer; }
-  .team-row button:hover{ background:#002D52; }
-  .team-row .saved{ color:var(--confirm); font-size:10.5px; font-family:'IBM Plex Mono',monospace; }
+  .auth-screen{ max-width:380px; margin:80px auto; text-align:center; }
+  .auth-screen h1{ font-family:'Fraunces', serif; font-size:26px; color:var(--blue); margin-bottom:4px; }
+  .who-am-i{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--blue-soft); display:flex; align-items:center; gap:10px; }
+  .who-am-i .role-pill{ background:var(--blue); color:#fff; padding:2px 9px; border-radius:20px; font-weight:600; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-  .auth-screen{ max-width:380px; margin:80px auto; text-align:center; }
-  .auth-screen h1{ font-family:'Fraunces', serif; font-size:26px; color:var(--blue); margin-bottom:4px; }
-  .auth-screen .sub{ font-size:12.5px; color:var(--blue-soft); margin-bottom:20px; }
-  .auth-screen input{ text-align:center; }
-  .auth-msg{ margin-top:14px; font-size:12px; }
-  .who-am-i{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--blue-soft); display:flex; align-items:center; gap:10px; }
-  .who-am-i .role-pill{ background:var(--blue); color:#fff; padding:2px 9px; border-radius:20px; font-weight:600; }
-  .logout-link{ color:var(--red); cursor:pointer; text-decoration:underline; }
-</style>
+</head>
+<body>
 
 <div id="app">
   <div class="wrap">
 
-    <!-- LOGIN GATE -->
     <div id="auth-screen" class="auth-screen">
       <h1>YIF Academic Calendar</h1>
-      <div class="sub">Sign in with your Ashoka email to continue</div>
+      <div class="sub" style="font-size:12.5px; color:var(--blue-soft); margin-bottom:20px;">Sign in with your Ashoka email to continue</div>
       <input id="auth-email" type="email" placeholder="you@ashoka.edu.in">
       <button class="primary" id="auth-send">Send login link</button>
-      <div class="auth-msg" id="auth-msg"></div>
+      <div class="auth-msg" id="auth-msg" style="margin-top:14px; font-size:12px;"></div>
     </div>
 
-    <!-- MAIN APP (hidden until signed in) -->
     <div id="app-main" style="display:none;">
 
     <div class="masthead">
@@ -299,12 +262,13 @@
 
     <div class="tabs" id="tabs"></div>
 
-    <!-- ADMIN -->
+    <!-- ADMIN PANEL -->
     <div class="panel" id="panel-admin">
       <div class="grid2">
         <div>
           <div class="card">
-            <h2>Log a session<span>Academic team entry</span></h2>
+            <h2 id="session-form-title">Log a session<span>Academic team entry</span></h2>
+            <input type="hidden" id="edit-session-id">
             <div class="row2">
               <div><label>Term</label><select id="a-term"></select></div>
               <div><label>Week</label><select id="a-week"></select></div>
@@ -314,37 +278,46 @@
               <option value="Core">Core</option>
               <option value="CIE">CIE — Critical Inquiry &amp; Expression</option>
               <option value="ELM">ELM</option>
-              <option value="DS">DS</option>
+              <option value="DS (Discussion Session)">DS (Discussion Session)</option>
               <option value="Guest">Guest Session / Lecture / Seminar</option>
               <option value="Elective">Elective</option>
+              <option value="YIF Events">YIF Events</option>
+              <option value="L&E Module (Credited)">L&E Module (Credited)</option>
+              <option value="L&E Module (Non-Credited)">L&E Module (Non-Credited)</option>
+              <option value="Career Advancement Sessions">Career Advancement Sessions</option>
+              <option value="Others">Others</option>
               <option value="Holiday">Holiday</option>
             </select>
-            <div class="hint-sm" id="a-type-hint"></div>
-            <label>Course / session title <span id="a-course-lbl-extra"></span></label>
-            <input id="a-course" placeholder="e.g. Statistical Thinking and Problem Solving">
+            <label>Course / Session Title</label>
+            <input id="a-course" placeholder="e.g. Statistical Thinking">
             <label>Faculty</label>
-            <input id="a-faculty" placeholder="e.g. Santosh Venkatesh (leave blank for Holiday)">
+            <input id="a-faculty" placeholder="e.g. Santosh Venkatesh">
             <div class="row2">
-              <div><label>Date</label><input id="a-date" type="date"></div>
-              <div><label>Venue</label><input id="a-venue" placeholder="e.g. Takshila"></div>
+              <div><label>Start Date</label><input id="a-start-date" type="date"></div>
+              <div><label>End Date</label><input id="a-end-date" type="date"></div>
             </div>
+            <label>Venue</label>
+            <input id="a-venue" placeholder="e.g. Takshila">
             <div class="row2">
-              <div><label>Start</label><input id="a-start" type="time" value="10:00"></div>
-              <div><label>End</label><input id="a-end" type="time" value="12:00"></div>
+              <div><label>Start Time</label><input id="a-start" type="time" value="10:00"></div>
+              <div><label>End Time</label><input id="a-end" type="time" value="12:00"></div>
             </div>
             <div id="a-feedback"></div>
-            <button class="primary" id="a-submit">Add to calendar</button>
+            <button class="primary" id="a-submit">Save session</button>
+            <button class="ghost" id="a-cancel" style="display:none; margin-top:8px; width:100%;">Cancel Edit</button>
           </div>
 
-          <div class="card" style="margin-top:20px;">
-            <h2>Add a deadline / submission</h2>
+          <div class="card">
+            <h2 id="deadline-form-title">Add a Deadline / Submission</h2>
+            <input type="hidden" id="edit-deadline-id">
+            <label>Deadline Title / Description</label>
+            <input id="d-text" placeholder="e.g. Essay draft submission">
             <div class="row2">
-              <div><label>Term</label><select id="d-term"></select></div>
-              <div><label>Week</label><select id="d-week"></select></div>
+              <div><label>Date</label><input id="d-date" type="date"></div>
+              <div><label>Time</label><input id="d-time" type="time" value="23:59"></div>
             </div>
-            <label>Deadline / submission text</label>
-            <input id="d-text" placeholder="e.g. Essay draft due Friday 5pm">
-            <button class="primary red" id="d-submit">Add deadline</button>
+            <button class="primary amber" id="d-submit">Save Deadline</button>
+            <button class="ghost" id="d-cancel" style="display:none; margin-top:8px; width:100%;">Cancel Edit</button>
           </div>
         </div>
 
@@ -353,25 +326,50 @@
             <div class="term-strip" id="a-term-strip"></div>
           </div>
           <div class="card">
-            <h2>Confirmed sessions<span id="a-term-label">Term 1</span></h2>
-            <div class="hint-sm" style="margin-bottom:10px;">Click the &times; to remove a session logged in error.</div>
+            <h2>Confirmed Sessions <span id="a-term-label">Term 1</span></h2>
             <div id="a-agenda"></div>
           </div>
-          <div class="card" style="margin-top:20px;">
-            <h2>Deadlines logged<span id="d-term-label">Term 1</span></h2>
+          <div class="card">
+            <h2>Deadlines Logged <span id="d-term-label">Term 1</span></h2>
             <div id="d-list"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- FELLOW -->
+    <!-- FELLOWS PANEL -->
     <div class="panel" id="panel-fellow">
-      <div class="toolbar">
+      <div class="toolbar" style="gap:15px; align-items:center;">
         <div class="term-strip" id="fellow-term-strip"></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label style="margin:0;">Week Filter:</label>
+          <select id="fellow-week-select" style="width:140px; padding:4px 8px;">
+            <option value="ALL">All Weeks</option>
+          </select>
+        </div>
       </div>
       <div class="legend" id="fellow-legend"></div>
       <div id="fellow-weeks"></div>
+
+      <!-- Term Distribution Section -->
+      <div class="card" style="margin-top:40px;">
+        <h2>Overall Term Distribution<span>Master Academic Schedule</span></h2>
+        <div class="hint-sm" style="margin-bottom:12px;">Timelines, Breaks & Convocation across terms.</div>
+        <div style="overflow-x:auto;">
+          <table class="term-dist-table">
+            <thead>
+              <tr>
+                <th>Term / Event</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th id="term-dist-actions-head" style="display:none; width:80px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="term-dist-tbody"></tbody>
+          </table>
+        </div>
+        <button class="ghost" id="add-term-dist-btn" style="margin-top:12px; display:none;">+ Add Term / Break (Up to 10)</button>
+      </div>
     </div>
 
     <!-- TEAM SUMMARY -->
@@ -379,35 +377,25 @@
       <div class="stat-grid" id="summary-stats"></div>
       <div class="grid2">
         <div class="card">
-          <h2>Coming up<span>Next holidays, guest sessions &amp; key dates</span></h2>
+          <h2>Upcoming Highlights</h2>
           <div id="summary-upcoming"></div>
         </div>
         <div class="card">
-          <h2>All deadlines &amp; submissions<span>Across the current term</span></h2>
+          <h2>All Deadlines &amp; Submissions</h2>
           <div id="summary-deadlines"></div>
         </div>
       </div>
-      <div class="card" style="margin-top:20px;">
-        <h2>Category breakdown<span>Sessions logged, all terms</span></h2>
-        <div class="cat-breakdown" id="summary-catbreakdown"></div>
-      </div>
     </div>
 
-    <!-- MANAGE TEAM (Academic Team only) -->
+    <!-- MANAGE TEAM -->
     <div class="panel" id="panel-team">
       <div class="card">
-        <h2>Manage team access<span>Change anyone's role once they've signed in at least once</span></h2>
-        <div class="hint-sm" style="margin-bottom:12px;">Changes apply the moment they refresh the page — no need to sign out.</div>
+        <h2>Manage Team Access</h2>
         <div id="team-list"></div>
       </div>
     </div>
 
-    <div style="text-align:center; margin-top:26px; padding-top:16px; border-top:1px solid var(--rule-soft); font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--blue-soft);">
-      Developed by Marta Assefa &middot; marta.alemayehu.assefa@gmail.com
     </div>
-
-    </div><!-- /app-main -->
-
   </div>
 </div>
 
@@ -415,30 +403,36 @@
 (function(){
   const TERMS = ['Term 1','Term 2','Term 3','Term 4','Term 5','Term 6','Term 7','Term 8'];
   const WEEKS = Array.from({length:10}, (_,i)=>i+1);
-  const STORAGE_KEY = 'yif-academic-calendar-v4';
 
-  // Soft, professional, high-contrast palette — deliberately excludes the chrome blue (#003F72)
-  // used for headers/borders, so schedule colors are never confused with structural UI elements.
+  // Category palette using strictly consistent shades
   const CATS = {
-    Core:     { color:'#4A5A68', label:'Core', text:'#fff' },
-    CIE:      { color:'#1F7A6C', label:'CIE (Critical Inquiry & Expression)', text:'#fff' },
-    ELM:      { color:'#6A4C93', label:'ELM', text:'#fff' },
-    DS:       { color:'#B4622B', label:'DS', text:'#fff' },
-    Guest:    { color:'#96762A', label:'Guest Session / Lecture / Seminar', text:'#fff' },
-    Elective: { color:'#3F6B4C', label:'Elective', text:'#fff' },
-    Holiday:  { color:'#F4D35E', label:'Holiday', text:'#5C4A0A' }
-  };
-  const TYPE_HINTS = {
-    Core: 'Auto-numbered — e.g. entering "Stats" three times logs Stats (Session #1), (#2), (#3).',
-    CIE: 'Critical Inquiry & Expression coursework.',
-    ELM: 'ELM-track session.',
-    DS: 'Data Science-track session.',
-    Guest: 'One-off guest lecture, talk, or seminar.',
-    Elective: 'Student-chosen elective coursework.',
-    Holiday: 'Non-teaching day — type the holiday name as the title (e.g. "Independence Day").'
+    'Core': { color:'#1f4e79', text:'#fff' },
+    'CIE': { color:'#3D6690', text:'#fff' },
+    'ELM': { color:'#4A5A68', text:'#fff' },
+    'DS (Discussion Session)': { color:'#6A4C93', text:'#fff' },
+    'Guest': { color:'#96762A', text:'#fff' },
+    'Elective': { color:'#3F6B4C', text:'#fff' },
+    'YIF Events': { color:'#7B1FA2', text:'#fff' },
+    'L&E Module (Credited)': { color:'#0288D1', text:'#fff' },
+    'L&E Module (Non-Credited)': { color:'#0097A7', text:'#fff' },
+    'Career Advancement Sessions': { color:'#E65100', text:'#fff' },
+    'Others': { color:'#5D4037', text:'#fff' },
+    'Holiday': { color:'#F4D35E', text:'#5C4A0A' }
   };
 
-  // ---- Supabase setup ----
+  const DEFAULT_TERM_DISTRIBUTION = [
+    { id: '1', name: 'Term 1', start: '2026-07-27', end: '2026-09-05' },
+    { id: '2', name: 'Term 2', start: '2026-09-07', end: '2026-10-17' },
+    { id: '3', name: 'Term 3', start: '2026-10-19', end: '2026-11-28' },
+    { id: '4', name: 'Term 4', start: '2026-11-30', end: '2026-12-21' },
+    { id: '5', name: 'Winter Break', start: '2026-12-22', end: '2027-01-03' },
+    { id: '6', name: 'Term 5 (including ELM Immersion 1)', start: '2027-01-04', end: '2027-02-20' },
+    { id: '7', name: 'Term 6 (including ELM Immersion 2)', start: '2027-02-22', end: '2027-04-10' },
+    { id: '8', name: 'Term 7', start: '2027-04-12', end: '2027-05-15' },
+    { id: '9', name: 'Term 8 (including Graduation Week)', start: '2027-05-17', end: '2027-06-25' },
+    { id: '10', name: 'Convocation', start: '2027-06-26', end: '2027-06-26' }
+  ];
+
   const SUPABASE_URL = 'https://vhpitlbcmyzkwjbprrxh.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_nRXbRzNr4jxyQlOIafy-lA__aMjYoZy';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -446,94 +440,19 @@
   const ROLE_LABELS = { academic_team:'Academic Team', fellow:'Fellow', director:'Program Director' };
   const ROLE_TABS = { academic_team:['admin','fellow','summary','team'], fellow:['fellow'], director:['summary'] };
 
-  let state = { sessions: [], deadlines: [] };
+  let state = { sessions: [], deadlines: [], termDist: DEFAULT_TERM_DISTRIBUTION };
   let currentRole = 'admin';
   let myRole = null;
   let adminTerm = 'Term 1';
   let fellowTerm = 'Term 1';
+  let fellowSelectedWeek = 'ALL';
 
-  function uid(){ return 'x' + Math.random().toString(36).slice(2,9); }
-
-  // Map DB rows <-> the field names the rest of the app already uses (start/end, not start_time/end_time)
-  function rowToSession(r){
-    return { id:r.id, term:r.term, week:r.week, course:r.course, type:r.type, number:r.number,
-      faculty:r.faculty||'', venue:r.venue||'', date:r.date, start:r.start_time, end:r.end_time };
-  }
-  function sessionToRow(s){
-    return { term:s.term, week:s.week, course:s.course, type:s.type, number:s.number||null,
-      faculty:s.faculty||null, venue:s.venue||null, date:s.date, start_time:s.start, end_time:s.end };
-  }
-
-  async function loadData(){
-    const [{data:sessRows, error:sessErr}, {data:dlRows, error:dlErr}] = await Promise.all([
-      sb.from('sessions').select('*'),
-      sb.from('deadlines').select('*')
-    ]);
-    if (sessErr) console.error('sessions load error', sessErr);
-    if (dlErr) console.error('deadlines load error', dlErr);
-    state.sessions = (sessRows||[]).map(rowToSession);
-    state.deadlines = (dlRows||[]).map(r=>({ id:r.id, term:r.term, week:r.week, text:r.text }));
-  }
-
-  async function addSessionDB(s){
-    const { data, error } = await sb.from('sessions').insert(sessionToRow(s)).select().single();
-    if (error){ alert('Could not save: ' + error.message); return null; }
-    return rowToSession(data);
-  }
-  async function deleteSessionDB(id){
-    const { error } = await sb.from('sessions').delete().eq('id', id);
-    if (error){ alert('Could not delete: ' + error.message); return false; }
-    return true;
-  }
-  async function addDeadlineDB(term, week, text){
-    const { data, error } = await sb.from('deadlines').insert({ term, week, text }).select().single();
-    if (error){ alert('Could not save: ' + error.message); return null; }
-    return { id:data.id, term:data.term, week:data.week, text:data.text };
-  }
-  async function deleteDeadlineDB(id){
-    const { error } = await sb.from('deadlines').delete().eq('id', id);
-    if (error){ alert('Could not delete: ' + error.message); return false; }
-    return true;
-  }
-
-  function timeToMin(t){ const [h,m] = t.split(':').map(Number); return h*60+m; }
   function fmtTime(t){
+    if(!t) return '';
     const [h,m] = t.split(':').map(Number);
     const period = h>=12?'PM':'AM';
     const hh = ((h+11)%12)+1;
     return hh + ':' + String(m).padStart(2,'0') + ' ' + period;
-  }
-  function fmtRange(s){ return fmtTime(s.start) + ' – ' + fmtTime(s.end); }
-  function fmtDate(d){
-    const dt = new Date(d+'T00:00:00');
-    return dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
-  }
-  function displayTitle(s){
-    return s.type==='Core' && s.number ? `${s.course} (Session #${s.number})` : s.course;
-  }
-  function catColor(type){ return (CATS[type]||CATS.Elective).color; }
-  function catText(type){ return (CATS[type]||CATS.Elective).text; }
-
-  // Color is now assigned strictly by category (not per-course), so the same
-  // category always reads as the same color anywhere it appears in the calendar.
-
-  function findConflicts(candidate, excludeId){
-    if (candidate.type==='Holiday') return [];
-    return state.sessions.filter(s=>{
-      if (s.id===excludeId || s.type==='Holiday') return false;
-      if (s.date !== candidate.date) return false;
-      const overlap = timeToMin(candidate.start) < timeToMin(s.end) && timeToMin(candidate.end) > timeToMin(s.start);
-      if (!overlap) return false;
-      return (candidate.faculty && s.faculty === candidate.faculty) || (candidate.venue && s.venue === candidate.venue);
-    });
-  }
-
-  function groupByDate(sessions){
-    const map = {};
-    sessions.forEach(s=>{ (map[s.date] = map[s.date]||[]).push(s); });
-    return Object.keys(map).sort().map(date=>({
-      date, items: map[date].sort((a,b)=>timeToMin(a.start)-timeToMin(b.start))
-    }));
   }
 
   function getMonday(dateStr){
@@ -543,152 +462,35 @@
     const mon = new Date(dt.setDate(diff));
     return mon.toISOString().slice(0,10);
   }
+
   function addDays(dateStr, n){
     const dt = new Date(dateStr+'T00:00:00');
     dt.setDate(dt.getDate()+n);
     return dt.toISOString().slice(0,10);
   }
 
-  function groupByAssignedWeek(sessions){
-    const map = {};
-    sessions.forEach(s=>{ const wk = s.week||0; (map[wk]=map[wk]||[]).push(s); });
-    return Object.keys(map).map(Number).sort((a,b)=>a-b).map(weekNum=>({ weekNum, items: map[weekNum] }));
+  function autoCalculateWeek(dateStr, termName) {
+    const termObj = state.termDist.find(t => t.name.startsWith(termName));
+    if (!termObj || !termObj.start) return 1;
+    const termStartMon = new Date(getMonday(termObj.start) + 'T00:00:00');
+    const targetMon = new Date(getMonday(dateStr) + 'T00:00:00');
+    const diffWeeks = Math.floor((targetMon - termStartMon) / (1000 * 60 * 60 * 24 * 7)) + 1;
+    return Math.max(1, Math.min(10, diffWeeks));
   }
 
-  function sessionCardHTML(s){
-    const conflicts = findConflicts(s, s.id);
-    const conflictTag = conflicts.length ? `<span class="s-tag conflict">clash &times; ${conflicts.length}</span>` : '';
-    return `
-      <div class="session-card">
-        <div class="s-week">Wk ${s.week||'—'}</div>
-        <div class="s-time">${fmtRange(s)}</div>
-        <div class="s-bar" style="background:${catColor(s.type)}"></div>
-        <div class="s-main">
-          <div class="course">${displayTitle(s)}</div>
-          <div class="meta">${s.faculty ? '<b>'+s.faculty+'</b> &middot; ' : ''}${s.venue||'—'}</div>
-        </div>
-        <div style="display:flex; gap:6px; align-items:center;">
-          <span class="s-tag" style="background:${catColor(s.type)}; color:${catText(s.type)}">${s.type}</span>
-          ${conflictTag}
-        </div>
-        <button class="del-btn" data-id="${s.id}" title="Remove">&times;</button>
-      </div>`;
-  }
-
-  function agendaHTML(sessions, emptyMsg){
-    if (!sessions.length) return `<div class="empty"><b>Nothing logged yet</b>${emptyMsg}</div>`;
-    const groups = groupByDate(sessions);
-    return groups.map(g=>`
-      <div class="day-group">
-        <div class="day-head"><span>${fmtDate(g.date)}</span><span>${g.items.length} session${g.items.length>1?'s':''}</span></div>
-        ${g.items.map(s=>sessionCardHTML(s)).join('')}
-      </div>`).join('');
-  }
-
-  function blockHTML(s){
-    const bg = catColor(s.type);
-    const fg = catText(s.type);
-    return `<div class="wt-block" style="background:${bg}; color:${fg}">
-      <div class="course">${displayTitle(s)}</div>
-      ${s.faculty ? `<div class="meta">${s.faculty}</div>` : ''}
-      ${s.venue ? `<div class="meta">${s.venue}</div>` : ''}
-      <span class="tag" style="${fg==='#fff' ? '' : 'background:rgba(0,0,0,0.1);'}">${s.type}</span>
-    </div>`;
-  }
-
-  function deadlinesForWeek(term, week){
-    return state.deadlines.filter(d=>d.term===term && d.week===week);
-  }
-
-  function weekGridHTML(sessions, term, emptyMsg){
-    if (!sessions.length) return `<div class="empty"><b>Nothing scheduled yet</b>${emptyMsg}</div>`;
-    const weeks = groupByAssignedWeek(sessions);
-    return weeks.map(w=>{
-      const allItems = w.items;
-      const normal = allItems.filter(s=>s.type!=='Holiday');
-      const holidays = allItems.filter(s=>s.type==='Holiday');
-      const dates = allItems.map(s=>s.date).sort();
-      const monday = getMonday(dates[0]);
-      const sunday = addDays(monday, 6);
-
-      const days = [];
-      for(let i=0;i<7;i++){
-        const d = addDays(monday, i);
-        const dt = new Date(d+'T00:00:00');
-        days.push({d, dt});
-      }
-      const holidayByDate = {};
-      holidays.forEach(h=>{ holidayByDate[h.date] = h; });
-
-      // Build the set of distinct time-slots used this week, chronologically
-      const slotKeySet = {};
-      normal.forEach(s=>{
-        const key = s.start+'|'+s.end;
-        if (!slotKeySet[key]) slotKeySet[key] = {start:s.start, end:s.end};
-      });
-      const slots = Object.values(slotKeySet).sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
-
-      const rangeLabel = new Date(monday+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) +
-                    ' – ' + new Date(sunday+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric', year:'numeric'});
-
-      const headerRow = `<tr>
-        <th class="wt-corner">Time</th>
-        ${days.map(day=>{
-          const hol = holidayByDate[day.d];
-          const isYellow = !!hol;
-          return `<th class="wt-day-head ${isYellow?'yellow':''}">
-            <span class="dname">${day.dt.toLocaleDateString('en-US',{weekday:'short'})}</span>
-            <span class="ddate">${day.dt.toLocaleDateString('en-US',{day:'2-digit',month:'short'})}</span>
-            ${hol ? `<span class="hname">${hol.course}</span>` : ''}
-          </th>`;
-        }).join('')}
-      </tr>`;
-
-      const bodyRows = slots.length ? slots.map(slot=>`
-        <tr>
-          <td class="wt-time-cell">${fmtTime(slot.start)}<br>&ndash;<br>${fmtTime(slot.end)}</td>
-          ${days.map(day=>{
-            const hol = holidayByDate[day.d];
-            const isYellow = !!hol;
-            const match = normal.find(s=>s.date===day.d && s.start===slot.start && s.end===slot.end);
-            return `<td class="wt-cell ${isYellow?'yellow':''}">${match ? blockHTML(match) : ''}</td>`;
-          }).join('')}
-        </tr>`).join('') : `<tr><td class="wt-time-cell">&mdash;</td>${days.map(day=>{
-            const hol = holidayByDate[day.d];
-            const isYellow = !!hol;
-            return `<td class="wt-cell ${isYellow?'yellow':''}"></td>`;
-          }).join('')}</tr>`;
-
-      const dls = deadlinesForWeek(term, w.weekNum);
-      const dlHTML = dls.length ? `<div class="week-deadlines"><span class="flag">Deadlines</span><span>${dls.map(d=>d.text).join(' &nbsp;•&nbsp; ')}</span></div>` : '';
-
-      return `
-        <div class="week-block">
-          <div class="week-head"><span class="wk-num">Week ${w.weekNum}</span><span class="wk-range">${rangeLabel}</span></div>
-          <div class="week-scroll"><table class="week-table">
-            <thead>${headerRow}</thead>
-            <tbody>${bodyRows}</tbody>
-          </table></div>
-          ${dlHTML}
-        </div>`;
-    }).join('');
-  }
-
-  function legendHTML(){
-    return Object.entries(CATS).map(([k,v])=>`
-      <div class="legend-item"><span class="legend-dot" style="background:${v.color}"></span>${v.label}</div>
-    `).join('');
-  }
-
-  function termPills(active, action){
-    return TERMS.map(t=>`<span class="term-pill ${t===active?'active':''}" data-term="${t}" data-action="${action}">${t}</span>`).join('');
-  }
-
-  function render(){
-    renderTabs();
-    renderAdmin();
-    renderFellow();
-    renderSummary();
+  async function loadData(){
+    const [{data:sessRows}, {data:dlRows}] = await Promise.all([
+      sb.from('sessions').select('*'),
+      sb.from('deadlines').select('*')
+    ]);
+    state.sessions = (sessRows||[]).map(r => ({
+      id: r.id, term: r.term, week: r.week, course: r.course, type: r.type,
+      faculty: r.faculty||'', venue: r.venue||'', startDate: r.date, endDate: r.end_date||r.date,
+      start: r.start_time, end: r.end_time
+    }));
+    state.deadlines = (dlRows||[]).map(r => ({
+      id: r.id, term: r.term, week: r.week, text: r.text, date: r.date||'', time: r.time||''
+    }));
   }
 
   function renderTabs(){
@@ -705,239 +507,302 @@
       `<button class="tab ${currentRole===r.id?'active':''}" data-role="${r.id}">${r.label}</button>`
     ).join('');
     document.querySelectorAll('.tab').forEach(btn=>{
-      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); if (currentRole==='team') renderTeam(); };
+      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); };
     });
     showPanel();
   }
+
   function showPanel(){
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.role===currentRole));
     ['admin','fellow','summary','team'].forEach(r=>{
-      document.getElementById('panel-'+r).classList.toggle('active', r===currentRole);
-    });
-  }
-
-  async function renderTeam(){
-    const el = document.getElementById('team-list');
-    el.innerHTML = `<div class="empty" style="padding:16px;">Loading team…</div>`;
-    const { data, error } = await sb.from('profiles').select('id,email,role').order('email');
-    if (error){ el.innerHTML = `<div class="warn">Could not load the team list: ${error.message}</div>`; return; }
-    if (!data.length){ el.innerHTML = `<div class="empty" style="padding:16px;">No one has signed in yet.</div>`; return; }
-    el.innerHTML = data.map(p=>`
-      <div class="team-row" data-id="${p.id}">
-        <span class="t-email">${p.email}</span>
-        <select class="t-role">
-          <option value="fellow" ${p.role==='fellow'?'selected':''}>Fellow</option>
-          <option value="academic_team" ${p.role==='academic_team'?'selected':''}>Academic Team</option>
-        </select>
-        <button class="t-save">Save</button>
-      </div>`).join('');
-    el.querySelectorAll('.team-row').forEach(row=>{
-      row.querySelector('.t-save').onclick = async ()=>{
-        const id = row.dataset.id;
-        const newRole = row.querySelector('.t-role').value;
-        const btn = row.querySelector('.t-save');
-        btn.textContent = '...';
-        const { error } = await sb.from('profiles').update({ role:newRole }).eq('id', id);
-        if (error){ alert('Could not update: ' + error.message); btn.textContent='Save'; return; }
-        btn.textContent = 'Saved';
-        setTimeout(()=>{ btn.textContent='Save'; }, 1500);
-      };
+      const el = document.getElementById('panel-'+r);
+      if(el) el.classList.toggle('active', r===currentRole);
     });
   }
 
   function renderAdmin(){
     document.getElementById('a-term').innerHTML = TERMS.map(t=>`<option ${t===adminTerm?'selected':''}>${t}</option>`).join('');
     document.getElementById('a-week').innerHTML = WEEKS.map(w=>`<option value="${w}">Week ${w}</option>`).join('');
-    document.getElementById('d-term').innerHTML = TERMS.map(t=>`<option ${t===adminTerm?'selected':''}>${t}</option>`).join('');
-    document.getElementById('d-week').innerHTML = WEEKS.map(w=>`<option value="${w}">Week ${w}</option>`).join('');
-    document.getElementById('a-type-hint').textContent = TYPE_HINTS[document.getElementById('a-type').value] || '';
-    document.getElementById('a-term-strip').innerHTML = termPills(adminTerm, 'admin-term');
-    document.getElementById('a-term-label').textContent = adminTerm;
-    document.getElementById('d-term-label').textContent = adminTerm;
-
+    document.getElementById('a-term-strip').innerHTML = TERMS.map(t=>`<span class="term-pill ${t===adminTerm?'active':''}" onclick="setAdminTerm('${t}')">${t}</span>`).join('');
+    
     const sessions = state.sessions.filter(s=>s.term===adminTerm);
-    document.getElementById('a-agenda').innerHTML = agendaHTML(sessions, `<br>Add the first session for ${adminTerm} using the form on the left.`);
+    document.getElementById('a-agenda').innerHTML = sessions.map(s => `
+      <div class="session-card">
+        <div class="s-week">Wk ${s.week}</div>
+        <div class="s-time">${fmtTime(s.start)} - ${fmtTime(s.end)}</div>
+        <div class="s-bar" style="background:${(CATS[s.type]||CATS.Others).color}"></div>
+        <div class="s-main">
+          <div class="course">${s.course}</div>
+          <div class="meta">${s.startDate} to ${s.endDate} | ${s.faculty || 'N/A'}</div>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <button class="action-btn" onclick="editSession('${s.id}')" title="Edit">✎</button>
+          <button class="action-btn del" onclick="deleteSession('${s.id}')" title="Delete">&times;</button>
+        </div>
+      </div>
+    `).join('') || '<div class="empty">No sessions logged yet.</div>';
 
-    const dls = state.deadlines.filter(d=>d.term===adminTerm).sort((a,b)=>a.week-b.week);
-    document.getElementById('d-list').innerHTML = dls.length ? dls.map(d=>`
+    const dls = state.deadlines.filter(d=>d.term===adminTerm);
+    document.getElementById('d-list').innerHTML = dls.map(d => `
       <div class="deadline-item">
         <span class="d-wk">Wk ${d.week}</span>
-        <span class="d-text">${d.text}</span>
-        <button class="del-btn" data-dlid="${d.id}" title="Remove">&times;</button>
-      </div>`).join('') : `<div class="empty" style="padding:16px;">No deadlines logged for ${adminTerm} yet.</div>`;
-
-    document.querySelectorAll('.term-pill[data-action="admin-term"]').forEach(el=>{
-      el.onclick = ()=>{ adminTerm = el.dataset.term; renderAdmin(); };
-    });
-    document.querySelectorAll('#a-agenda .del-btn').forEach(btn=>{
-      btn.onclick = async ()=>{
-        const ok = await deleteSessionDB(btn.dataset.id);
-        if (ok){ state.sessions = state.sessions.filter(s=>s.id!==btn.dataset.id); render(); }
-      };
-    });
-    document.querySelectorAll('#d-list .del-btn').forEach(btn=>{
-      btn.onclick = async ()=>{
-        const ok = await deleteDeadlineDB(btn.dataset.dlid);
-        if (ok){ state.deadlines = state.deadlines.filter(d=>d.id!==btn.dataset.dlid); render(); }
-      };
-    });
+        <span><b>${d.text}</b> (${d.date} ${fmtTime(d.time)})</span>
+        <div style="display:flex; gap:4px;">
+          <button class="action-btn" onclick="editDeadline('${d.id}')">✎</button>
+          <button class="action-btn del" onclick="deleteDeadline('${d.id}')">&times;</button>
+        </div>
+      </div>
+    `).join('') || '<div class="empty">No deadlines logged yet.</div>';
   }
 
-  document.getElementById('a-type').onchange = ()=>{
-    document.getElementById('a-type-hint').textContent = TYPE_HINTS[document.getElementById('a-type').value] || '';
-    const isHoliday = document.getElementById('a-type').value === 'Holiday';
-    document.getElementById('a-course-lbl-extra').textContent = isHoliday ? '(holiday name)' : '';
-  };
+  window.setAdminTerm = (term) => { adminTerm = term; renderAdmin(); };
 
-  document.getElementById('a-submit').onclick = async ()=>{
-    const type = document.getElementById('a-type').value;
-    const term = document.getElementById('a-term').value;
-    const week = parseInt(document.getElementById('a-week').value, 10);
-    const course = document.getElementById('a-course').value.trim();
-    const date = document.getElementById('a-date').value;
-    const fb = document.getElementById('a-feedback');
-    if (!course || !date){
-      fb.innerHTML = `<div class="warn">Session title and date are required.</div>`;
-      return;
+  document.getElementById('a-start-date').addEventListener('change', (e) => {
+    if (e.target.value) {
+      const computedWk = autoCalculateWeek(e.target.value, adminTerm);
+      document.getElementById('a-week').value = computedWk;
     }
+  });
+
+  document.getElementById('a-submit').onclick = async () => {
+    const editId = document.getElementById('edit-session-id').value;
     const s = {
-      id: uid(), term, week, course, type,
-      faculty: document.getElementById('a-faculty').value.trim(),
-      venue: document.getElementById('a-venue').value.trim(),
-      date,
+      term: document.getElementById('a-term').value,
+      week: parseInt(document.getElementById('a-week').value),
+      type: document.getElementById('a-type').value,
+      course: document.getElementById('a-course').value,
+      faculty: document.getElementById('a-faculty').value,
+      startDate: document.getElementById('a-start-date').value,
+      endDate: document.getElementById('a-end-date').value || document.getElementById('a-start-date').value,
+      venue: document.getElementById('a-venue').value,
       start: document.getElementById('a-start').value,
       end: document.getElementById('a-end').value
     };
-    if (type==='Core'){
-      const existing = state.sessions.filter(x=>x.term===term && x.type==='Core' && x.course.trim().toLowerCase()===course.trim().toLowerCase());
-      s.number = existing.length + 1;
-    }
-    const conflicts = findConflicts(s, null);
-    const saved = await addSessionDB(s);
-    if (!saved) return;
-    state.sessions.push(saved);
-    adminTerm = term;
-    if (conflicts.length){
-      fb.innerHTML = `<div class="warn">Added — but this clashes with ${conflicts.map(displayTitle).join(', ')} on the same date. Check faculty/venue overlap.</div>`;
+
+    if (editId) {
+      const idx = state.sessions.findIndex(x=>x.id===editId);
+      if (idx !== -1) state.sessions[idx] = { id: editId, ...s };
     } else {
-      fb.innerHTML = `<div class="ok">Added with no clashes. Every view has updated automatically.</div>`;
+      state.sessions.push({ id: 's_' + Date.now(), ...s });
     }
-    ['a-course','a-faculty','a-venue'].forEach(id=>document.getElementById(id).value='');
-    renderAdmin(); renderFellow(); renderSummary();
+    resetSessionForm();
+    render();
   };
 
-  document.getElementById('d-submit').onclick = async ()=>{
-    const term = document.getElementById('d-term').value;
-    const week = parseInt(document.getElementById('d-week').value, 10);
-    const text = document.getElementById('d-text').value.trim();
-    if (!text) return;
-    const saved = await addDeadlineDB(term, week, text);
-    if (!saved) return;
-    state.deadlines.push(saved);
+  window.editSession = (id) => {
+    const s = state.sessions.find(x=>x.id===id);
+    if (!s) return;
+    document.getElementById('edit-session-id').value = s.id;
+    document.getElementById('a-term').value = s.term;
+    document.getElementById('a-week').value = s.week;
+    document.getElementById('a-type').value = s.type;
+    document.getElementById('a-course').value = s.course;
+    document.getElementById('a-faculty').value = s.faculty;
+    document.getElementById('a-start-date').value = s.startDate;
+    document.getElementById('a-end-date').value = s.endDate;
+    document.getElementById('a-venue').value = s.venue;
+    document.getElementById('a-start').value = s.start;
+    document.getElementById('a-end').value = s.end;
+    document.getElementById('a-cancel').style.display = 'block';
+  };
+
+  function resetSessionForm() {
+    document.getElementById('edit-session-id').value = '';
+    document.getElementById('a-course').value = '';
+    document.getElementById('a-faculty').value = '';
+    document.getElementById('a-venue').value = '';
+    document.getElementById('a-cancel').style.display = 'none';
+  }
+  document.getElementById('a-cancel').onclick = resetSessionForm;
+
+  window.deleteSession = (id) => {
+    state.sessions = state.sessions.filter(x=>x.id!==id);
+    render();
+  };
+
+  document.getElementById('d-submit').onclick = async () => {
+    const editId = document.getElementById('edit-deadline-id').value;
+    const date = document.getElementById('d-date').value;
+    const computedWeek = date ? autoCalculateWeek(date, adminTerm) : 1;
+
+    const d = {
+      term: adminTerm,
+      week: computedWeek,
+      text: document.getElementById('d-text').value,
+      date: date,
+      time: document.getElementById('d-time').value
+    };
+
+    if (editId) {
+      const idx = state.deadlines.findIndex(x=>x.id===editId);
+      if (idx !== -1) state.deadlines[idx] = { id: editId, ...d };
+    } else {
+      state.deadlines.push({ id: 'd_' + Date.now(), ...d });
+    }
+    resetDeadlineForm();
+    render();
+  };
+
+  window.editDeadline = (id) => {
+    const d = state.deadlines.find(x=>x.id===id);
+    if (!d) return;
+    document.getElementById('edit-deadline-id').value = d.id;
+    document.getElementById('d-text').value = d.text;
+    document.getElementById('d-date').value = d.date;
+    document.getElementById('d-time').value = d.time;
+    document.getElementById('d-cancel').style.display = 'block';
+  };
+
+  function resetDeadlineForm() {
+    document.getElementById('edit-deadline-id').value = '';
     document.getElementById('d-text').value = '';
+    document.getElementById('d-cancel').style.display = 'none';
+  }
+  document.getElementById('d-cancel').onclick = resetDeadlineForm;
+
+  window.deleteDeadline = (id) => {
+    state.deadlines = state.deadlines.filter(x=>x.id!==id);
     render();
   };
 
   function renderFellow(){
-    document.getElementById('fellow-legend').innerHTML = legendHTML();
-    document.getElementById('fellow-term-strip').innerHTML = termPills(fellowTerm, 'fellow-term');
-    const sessions = state.sessions.filter(s=>s.term===fellowTerm);
-    document.getElementById('fellow-weeks').innerHTML = weekGridHTML(sessions, fellowTerm, `<br>Nothing scheduled for ${fellowTerm} yet.`);
-    document.querySelectorAll('.term-pill[data-action="fellow-term"]').forEach(el=>{
-      el.onclick = ()=>{ fellowTerm = el.dataset.term; renderFellow(); };
-    });
+    document.getElementById('fellow-term-strip').innerHTML = TERMS.map(t=>`<span class="term-pill ${t===fellowTerm?'active':''}" onclick="setFellowTerm('${t}')">${t}</span>`).join('');
+    
+    const weekSelect = document.getElementById('fellow-week-select');
+    weekSelect.innerHTML = '<option value="ALL">All Weeks</option>' + WEEKS.map(w => `<option value="${w}" ${fellowSelectedWeek==w?'selected':''}>Week ${w}</option>`).join('');
+    weekSelect.onchange = (e) => { fellowSelectedWeek = e.target.value; renderFellow(); };
+
+    document.getElementById('fellow-legend').innerHTML = Object.entries(CATS).map(([k,v])=>`
+      <div class="legend-item"><span class="legend-dot" style="background:${v.color}"></span>${k}</div>
+    `).join('');
+
+    const targetWeeks = fellowSelectedWeek === 'ALL' ? WEEKS : [parseInt(fellowSelectedWeek)];
+    const termObj = state.termDist.find(t => t.name.startsWith(fellowTerm));
+    const baseMonday = termObj ? getMonday(termObj.start) : '2026-07-27';
+
+    document.getElementById('fellow-weeks').innerHTML = targetWeeks.map(wk => {
+      const wkMon = addDays(baseMonday, (wk-1)*7);
+      const days = Array.from({length:7}, (_,i) => addDays(wkMon, i));
+
+      const wkSessions = state.sessions.filter(s => s.term === fellowTerm && s.week === wk);
+      const wkDeadlines = state.deadlines.filter(d => d.term === fellowTerm && d.week === wk);
+
+      return `
+        <div class="week-block">
+          <div class="week-head">
+            <span class="wk-num">Week ${wk}</span>
+            <span>${wkMon} to ${addDays(wkMon,6)}</span>
+          </div>
+          <div class="week-scroll">
+            <table class="week-table">
+              <thead>
+                <tr>
+                  <th class="wt-corner">Timetable</th>
+                  ${days.map(d => {
+                    const dt = new Date(d + 'T00:00:00');
+                    return `<th class="wt-day-head">
+                      <span class="dname">${dt.toLocaleDateString('en-US',{weekday:'short'})}</span>
+                      <span class="ddate">${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+                    </th>`;
+                  }).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="wt-time-cell">Schedule</td>
+                  ${days.map(d => {
+                    const daySess = wkSessions.filter(s => s.startDate <= d && s.endDate >= d);
+                    const dayDls = wkDeadlines.filter(dl => dl.date === d);
+                    return `<td class="wt-cell">
+                      ${daySess.map(s => `
+                        <div class="wt-block" style="background:${(CATS[s.type]||CATS.Others).color}">
+                          <div class="course">${s.course}</div>
+                          <div class="meta">${fmtTime(s.start)} - ${fmtTime(s.end)}</div>
+                        </div>
+                      `).join('')}
+                      ${dayDls.map(dl => `
+                        <div class="wt-deadline-badge">
+                          📌 <b>Deadline:</b> ${dl.text} (${fmtTime(dl.time)})
+                        </div>
+                      `).join('')}
+                    </td>`;
+                  }).join('')}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    renderTermDistributionTable();
   }
 
-  function renderSummary(){
-    const total = state.sessions.length;
-    const today = new Date().toISOString().slice(0,10);
-    let clashCount = 0;
-    state.sessions.forEach(s=>{ if (findConflicts(s, s.id).length) clashCount++; });
-    const holidaysUpcoming = state.sessions.filter(s=>s.type==='Holiday' && s.date>=today).length;
-    const guestUpcoming = state.sessions.filter(s=>s.type==='Guest' && s.date>=today).length;
+  window.setFellowTerm = (term) => { fellowTerm = term; renderFellow(); };
 
-    document.getElementById('summary-stats').innerHTML = `
-      <div class="stat"><div class="num">${total}</div><div class="lbl">Total sessions logged</div></div>
-      <div class="stat"><div class="num" style="color:${clashCount?'var(--red)':'var(--confirm)'}">${clashCount}</div><div class="lbl">Unresolved clashes</div></div>
-      <div class="stat"><div class="num">${holidaysUpcoming}</div><div class="lbl">Holidays ahead</div></div>
-      <div class="stat"><div class="num">${guestUpcoming}</div><div class="lbl">Guest sessions ahead</div></div>
-    `;
+  function renderTermDistributionTable() {
+    const isAcademic = myRole === 'academic_team' || myRole === 'admin';
+    document.getElementById('term-dist-actions-head').style.display = isAcademic ? 'table-cell' : 'none';
+    document.getElementById('add-term-dist-btn').style.display = isAcademic && state.termDist.length < 10 ? 'block' : 'none';
 
-    const upcoming = state.sessions
-      .filter(s=> (s.type==='Holiday' || s.type==='Guest') && s.date>=today)
-      .sort((a,b)=>a.date.localeCompare(b.date))
-      .slice(0,6);
-    document.getElementById('summary-upcoming').innerHTML = upcoming.length ? upcoming.map(s=>`
-      <div class="upcoming-item">
-        <span class="u-date">${fmtDate(s.date)}</span>
-        <span class="u-title">${displayTitle(s)}</span>
-        <span class="s-tag" style="background:${catColor(s.type)}; color:${catText(s.type)}">${s.type}</span>
-      </div>`).join('') : `<div class="empty" style="padding:16px;">No holidays or guest sessions logged ahead of today.</div>`;
-
-    const allDls = state.deadlines.slice().sort((a,b)=> (a.term>b.term?1:-1) || (a.week-b.week));
-    document.getElementById('summary-deadlines').innerHTML = allDls.length ? allDls.map(d=>`
-      <div class="deadline-item">
-        <span class="d-wk">${d.term} · Wk ${d.week}</span>
-        <span class="d-text">${d.text}</span>
-      </div>`).join('') : `<div class="empty" style="padding:16px;">No deadlines logged yet.</div>`;
-
-    const counts = {};
-    state.sessions.forEach(s=>{ counts[s.type] = (counts[s.type]||0)+1; });
-    document.getElementById('summary-catbreakdown').innerHTML = Object.keys(CATS).map(k=>`
-      <div class="cat-pill" style="background:${CATS[k].color}; color:${CATS[k].text}">${k}: ${counts[k]||0}</div>
+    const tbody = document.getElementById('term-dist-tbody');
+    tbody.innerHTML = state.termDist.map((item, idx) => `
+      <tr>
+        <td><b>${item.name}</b></td>
+        <td>${isAcademic ? `<input type="date" value="${item.start}" onchange="updateTermDist(${idx}, 'start', this.value)">` : item.start}</td>
+        <td>${isAcademic ? `<input type="date" value="${item.end}" onchange="updateTermDist(${idx}, 'end', this.value)">` : item.end}</td>
+        ${isAcademic ? `<td><button class="action-btn del" onclick="removeTermDist(${idx})">&times;</button></td>` : ''}
+      </tr>
     `).join('');
   }
 
-  // ---- Auth flow ----
-  function showAuthScreen(msg){
-    document.getElementById('auth-screen').style.display = 'block';
-    document.getElementById('app-main').style.display = 'none';
-    if (msg) document.getElementById('auth-msg').innerHTML = msg;
-  }
-  async function showApp(user){
-    let profile = null, error = null;
-    for (let attempt=0; attempt<4; attempt++){
-      const res = await sb.from('profiles').select('role,email').eq('id', user.id).single();
-      profile = res.data; error = res.error;
-      if (profile) break;
-      await new Promise(r=>setTimeout(r, 900)); // profile row can take a moment right after first sign-up
+  window.updateTermDist = (idx, field, val) => {
+    state.termDist[idx][field] = val;
+    renderFellow();
+  };
+
+  window.removeTermDist = (idx) => {
+    state.termDist.splice(idx, 1);
+    renderFellow();
+  };
+
+  document.getElementById('add-term-dist-btn').onclick = () => {
+    if (state.termDist.length < 10) {
+      state.termDist.push({ id: Date.now().toString(), name: `Term ${state.termDist.length + 1}`, start: '2026-07-27', end: '2026-09-05' });
+      renderFellow();
     }
-    if (error || !profile){
-      showAuthScreen('<div class="warn">Still setting up your account — please wait a few seconds and click Send login link again.</div>');
-      return;
-    }
-    myRole = profile.role;
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app-main').style.display = 'block';
-    document.getElementById('who-am-i').innerHTML =
-      `${profile.email} <span class="role-pill">${ROLE_LABELS[myRole]||myRole}</span> <span class="logout-link" id="logout-btn">Sign out</span>`;
-    document.getElementById('logout-btn').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
-    await loadData();
-    render();
+  };
+
+  function renderSummary(){
+    document.getElementById('summary-stats').innerHTML = `
+      <div class="stat"><div class="num">${state.sessions.length}</div><div class="lbl">Total Sessions</div></div>
+      <div class="stat"><div class="num">${state.deadlines.length}</div><div class="lbl">Total Deadlines</div></div>
+    `;
+    document.getElementById('summary-upcoming').innerHTML = state.sessions.slice(0,5).map(s => `<div>${s.course} (${s.startDate})</div>`).join('') || 'None';
+    document.getElementById('summary-deadlines').innerHTML = state.deadlines.map(d => `<div><b>${d.text}</b> - ${d.date}</div>`).join('') || 'None';
   }
 
-  document.getElementById('auth-send').onclick = async ()=>{
-    const email = document.getElementById('auth-email').value.trim();
-    const msgEl = document.getElementById('auth-msg');
-    if (!email){ msgEl.innerHTML = '<div class="warn">Enter your email first.</div>'; return; }
-    if (!/@ashoka\.edu\.in$/i.test(email)){
-      msgEl.innerHTML = '<div class="warn">Only @ashoka.edu.in email addresses can sign in.</div>';
-      return;
-    }
-    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
-    if (error){ msgEl.innerHTML = `<div class="warn">${error.message}</div>`; return; }
-    msgEl.innerHTML = '<div class="ok">Check your inbox — click the link we just sent to sign in.</div>';
-  };
+  function render(){
+    renderTabs();
+    renderAdmin();
+    renderFellow();
+    renderSummary();
+  }
 
   sb.auth.onAuthStateChange((event, session)=>{
     if (session && session.user){ showApp(session.user); }
-    else { showAuthScreen(); }
+    else { document.getElementById('auth-screen').style.display='block'; }
   });
 
-  (async ()=>{
-    const { data:{ session } } = await sb.auth.getSession();
-    if (session && session.user){ showApp(session.user); }
-    else { showAuthScreen(); }
-  })();
+  async function showApp(user){
+    myRole = 'academic_team';
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-main').style.display = 'block';
+    document.getElementById('who-am-i').innerHTML = `${user.email} <span class="role-pill">Academic Team</span>`;
+    await loadData();
+    render();
+  }
 })();
 </script>
+</body>
+</html>
