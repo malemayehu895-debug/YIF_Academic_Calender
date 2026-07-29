@@ -536,20 +536,24 @@
     }));
   }
 
-  function getMonday(dateStr){
-    const dt = new Date(dateStr+'T00:00:00');
-    const day = dt.getDay();
-    let diff;
-    if(day===6){ // Saturday -> next Monday
-      diff = dt.getDate() + 2;
-    } else if(day===0){ // Sunday -> next Monday
-      diff = dt.getDate() + 1;
-    } else {
-      diff = dt.getDate() - day + 1;
+  function getWeekDates(startDate) {
+    const date = new Date(startDate);
+
+    const day = date.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+
+    date.setDate(date.getDate() + diff);
+
+    const week = [];
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(date);
+        d.setDate(date.getDate() + i);
+        week.push(d);
     }
-    const mon = new Date(dt.setDate(diff));
-    return mon.toISOString().slice(0,10);
-  }
+
+    return week;
+}
   function addDays(dateStr, n){
     const dt = new Date(dateStr+'T00:00:00');
     dt.setDate(dt.getDate()+n);
