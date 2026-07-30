@@ -204,7 +204,7 @@
               <option value="Core">Core</option>
               <option value="CIE">CIE — Critical Inquiry &amp; Expression</option>
               <option value="ELM">ELM</option>
-              <option value="DS">Discussion Session</option>
+              <option value="DS">DS</option>
               <option value="Guest">Guest Session / Lecture / Seminar</option>
               <option value="Elective">Elective</option>
               <option value="YIFEvents">YIF Events</option>
@@ -346,7 +346,7 @@
     Core:         { color:'#4A5A68', label:'Core', text:'#fff' },
     CIE:          { color:'#1F7A6C', label:'CIE (Critical Inquiry & Expression)', text:'#fff' },
     ELM:          { color:'#6A4C93', label:'ELM', text:'#fff' },
-    DS:           { color:'#B4622B', label:'Discussion Session', text:'#fff' },
+    DS:           { color:'#B4622B', label:'DS', text:'#fff' },
     Guest:        { color:'#8A6D3A', label:'Guest Session / Lecture / Seminar', text:'#fff' },
     Elective:     { color:'#3F6B4C', label:'Elective', text:'#fff' },
     YIFEvents:    { color:'#4E7A9C', label:'YIF Events', text:'#fff' },
@@ -584,15 +584,19 @@
     const headerRow = `<tr>
       <th class="wt-corner">Time</th>
       ${days.map(day=>{
-        const hol = holidayOnDay(day.d);
-        const isYellow = !!hol;
-        return `<th class="wt-day-head ${isYellow?'yellow':''}">
+        return `<th class="wt-day-head">
           <span class="dname">${day.dt.toLocaleDateString('en-US',{weekday:'short'})}</span>
           <span class="ddate">${day.dt.toLocaleDateString('en-US',{day:'2-digit',month:'short'})}</span>
-          ${hol ? `<span class="hname">${hol.course}</span>` : ''}
         </th>`;
       }).join('')}
     </tr>`;
+
+    function holidayBlockHTML(hol){
+      return `<div class="wt-block" style="background:${catColor('Holiday')}; color:${catText('Holiday')}">
+        <div class="course">${hol.course}</div>
+        <span class="tag" style="background:rgba(0,0,0,0.08);">Holiday</span>
+      </div>`;
+    }
 
     const bodyRows = slots.length ? slots.map(slot=>`
       <tr>
@@ -601,12 +605,13 @@
           const hol = holidayOnDay(day.d);
           const isYellow = !!hol;
           const match = normal.find(s=> day.d>=s.dateStart && day.d<=s.dateEnd && s.start===slot.start && s.end===slot.end);
-          return `<td class="wt-cell ${isYellow?'yellow':''}">${match ? blockHTML(match) : ''}</td>`;
+          const content = hol ? holidayBlockHTML(hol) : (match ? blockHTML(match) : '');
+          return `<td class="wt-cell ${isYellow?'yellow':''}">${content}</td>`;
         }).join('')}
       </tr>`).join('') : `<tr><td class="wt-time-cell">&mdash;</td>${days.map(day=>{
           const hol = holidayOnDay(day.d);
           const isYellow = !!hol;
-          return `<td class="wt-cell ${isYellow?'yellow':''}"></td>`;
+          return `<td class="wt-cell ${isYellow?'yellow':''}">${hol ? holidayBlockHTML(hol) : ''}</td>`;
         }).join('')}</tr>`;
 
     const dls = deadlinesInRange(term, monday, sunday);
