@@ -433,8 +433,9 @@
     return rowToSession(data);
   }
   async function deleteSessionDB(id){
-    const { error } = await sb.from('sessions').delete().eq('id', id);
+    const { data, error } = await sb.from('sessions').delete().eq('id', id).select();
     if (error){ alert('Could not delete: ' + error.message); return false; }
+    if (!data || !data.length){ alert('Delete did not take effect (0 rows removed) — this usually means a database permission is blocking it. Nothing was changed.'); return false; }
     return true;
   }
   async function addDeadlineDB(term, week, date, time, text){
@@ -443,8 +444,9 @@
     return rowToDeadline(data);
   }
   async function deleteDeadlineDB(id){
-    const { error } = await sb.from('deadlines').delete().eq('id', id);
+    const { data, error } = await sb.from('deadlines').delete().eq('id', id).select();
     if (error){ alert('Could not delete: ' + error.message); return false; }
+    if (!data || !data.length){ alert('Delete did not take effect (0 rows removed) — this usually means a database permission is blocking it. Nothing was changed.'); return false; }
     return true;
   }
   async function addTermRowDB(label, start, end){
@@ -454,8 +456,9 @@
     return rowToTermRow(data);
   }
   async function deleteTermRowDB(id){
-    const { error } = await sb.from('term_distribution').delete().eq('id', id);
+    const { data, error } = await sb.from('term_distribution').delete().eq('id', id).select();
     if (error){ alert('Could not delete: ' + error.message); return false; }
+    if (!data || !data.length){ alert('Delete did not take effect (0 rows removed) — this usually means a database permission is blocking it. Nothing was changed.'); return false; }
     return true;
   }
 
