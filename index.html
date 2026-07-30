@@ -236,8 +236,10 @@
 
           <div class="card" style="margin-top:20px;">
             <h2>Add a deadline / submission</h2>
-            <label>Term</label>
-            <select id="d-term"></select>
+            <div class="row2">
+              <div><label>Term</label><select id="d-term"></select></div>
+              <div><label>Week</label><select id="d-week"></select></div>
+            </div>
             <div class="row2">
               <div><label>Date</label><input id="d-date" type="date"></div>
               <div><label>Time <span class="hint-sm" style="display:inline">(optional)</span></label><input id="d-time" type="time"></div>
@@ -391,7 +393,7 @@
       faculty:s.faculty||null, venue:s.venue||null, date:s.dateStart, end_date:s.dateEnd||s.dateStart,
       start_time:s.start, end_time:s.end };
   }
-  function rowToDeadline(r){ return { id:r.id, term:r.term, date:r.date, time:r.time||'', text:r.text }; }
+  function rowToDeadline(r){ return { id:r.id, term:r.term, week:r.week||null, date:r.date, time:r.time||'', text:r.text }; }
   function rowToTermRow(r){ return { id:r.id, label:r.label, start:r.start_date, end:r.end_date, sort:r.sort_order||0 }; }
 
   async function loadData(){
@@ -423,8 +425,8 @@
     if (error){ alert('Could not delete: ' + error.message); return false; }
     return true;
   }
-  async function addDeadlineDB(term, date, time, text){
-    const { data, error } = await sb.from('deadlines').insert({ term, date, time: time||null, text }).select().single();
+  async function addDeadlineDB(term, week, date, time, text){
+    const { data, error } = await sb.from('deadlines').insert({ term, week: week||null, date, time: time||null, text }).select().single();
     if (error){ alert('Could not save: ' + error.message); return null; }
     return rowToDeadline(data);
   }
@@ -725,6 +727,7 @@
     document.getElementById('a-term').innerHTML = TERMS.map(t=>`<option ${t===adminTerm?'selected':''}>${t}</option>`).join('');
     document.getElementById('a-week').innerHTML = WEEKS.map(w=>`<option value="${w}">Week ${w}</option>`).join('');
     document.getElementById('d-term').innerHTML = TERMS.map(t=>`<option ${t===adminTerm?'selected':''}>${t}</option>`).join('');
+    document.getElementById('d-week').innerHTML = `<option value="">—</option>` + WEEKS.map(w=>`<option value="${w}">Week ${w}</option>`).join('');
     document.getElementById('a-type-hint').textContent = TYPE_HINTS[document.getElementById('a-type').value] || '';
     document.getElementById('a-term-strip').innerHTML = termPills(adminTerm, 'admin-term');
     document.getElementById('a-term-label').textContent = adminTerm;
@@ -736,7 +739,7 @@
     const dls = state.deadlines.filter(d=>d.term===adminTerm).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     document.getElementById('d-list').innerHTML = dls.length ? dls.map(d=>`
       <div class="deadline-item">
-        <span class="d-date">${fmtDate(d.date)}${d.time?' · '+fmtTime(d.time):''}</span>
+        <span class="d-date">${d.week?'Wk '+d.week+' · ':''}${fmtDate(d.date)}${d.time?' · '+fmtTime(d.time):''}</span>
         <span class="d-text">${d.text}</span>
         <button class="icon-btn del" data-dlid="${d.id}" title="Remove">&times;</button>
       </div>`).join('') : `<div class="empty" style="padding:16px;">No deadlines logged for ${adminTerm} yet.</div>`;
@@ -865,16 +868,18 @@
 
   document.getElementById('d-submit').onclick = async ()=>{
     const term = document.getElementById('d-term').value;
+    const week = document.getElementById('d-week').value ? parseInt(document.getElementById('d-week').value, 10) : null;
     const date = document.getElementById('d-date').value;
     const time = document.getElementById('d-time').value;
     const text = document.getElementById('d-text').value.trim();
     if (!text || !date) return;
-    const saved = await addDeadlineDB(term, date, time, text);
+    const saved = await addDeadlineDB(term, week, date, time, text);
     if (!saved) return;
     state.deadlines.push(saved);
     document.getElementById('d-text').value = '';
     document.getElementById('d-date').value = '';
     document.getElementById('d-time').value = '';
+    document.getElementById('d-week').value = '';
     render();
   };
 
@@ -940,7 +945,7 @@
     const allDls = state.deadlines.slice().sort((a,b)=> (a.term>b.term?1:-1) || (a.date||'').localeCompare(b.date||''));
     document.getElementById('summary-deadlines').innerHTML = allDls.length ? allDls.map(d=>`
       <div class="deadline-item">
-        <span class="d-date">${d.term} · ${fmtDate(d.date)}${d.time?' '+fmtTime(d.time):''}</span>
+        <span class="d-date">${d.term}${d.week?' · Wk '+d.week:''} · ${fmtDate(d.date)}${d.time?' '+fmtTime(d.time):''}</span>
         <span class="d-text">${d.text}</span>
       </div>`).join('') : `<div class="empty" style="padding:16px;">No deadlines logged yet.</div>`;
 
