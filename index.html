@@ -205,7 +205,9 @@
               <option value="CIE">CIE — Critical Inquiry &amp; Expression</option>
               <option value="ELM">ELM</option>
               <option value="DS">DS</option>
-              <option value="Guest">Guest Session / Lecture / Seminar</option>
+              <option value="GuestSession">Guest Session</option>
+              <option value="Lecture">Lecture</option>
+              <option value="Seminar">Seminar</option>
               <option value="Elective">Elective</option>
               <option value="YIFEvents">YIF Events</option>
               <option value="LECredited">L&amp;E Module (Credited)</option>
@@ -221,7 +223,7 @@
             <input id="a-faculty" placeholder="leave blank for Holiday / Events">
             <div class="row2">
               <div><label>Date</label><input id="a-date-start" type="date"></div>
-              <div id="a-date-end-wrap" style="display:none;"><label>End Date <span class="hint-sm" style="display:inline">(holiday range)</span></label><input id="a-date-end" type="date"></div>
+              <div id="a-date-end-wrap" style="display:none;"><label>End Date <span class="hint-sm" style="display:inline">(optional — leave blank for a single day)</span></label><input id="a-date-end" type="date"></div>
             </div>
             <label>Venue</label>
             <input id="a-venue" placeholder="e.g. Takshila">
@@ -289,13 +291,16 @@
       <div class="toolbar">
         <div class="term-strip" id="fellow-term-strip"></div>
         <select class="week-select" id="fellow-week-select"></select>
-        <button class="ghost" id="td-toggle-btn">Term Distribution</button>
       </div>
       <div class="legend" id="fellow-legend"></div>
       <div id="fellow-weeks"></div>
-      <div class="card" id="fellow-term-dist-card" style="margin-top:26px; display:none;">
+    </div>
+
+    <!-- TERM DISTRIBUTION -->
+    <div class="panel" id="panel-termdist">
+      <div class="card">
         <h2>Term distribution<span>Full academic-year timeline</span></h2>
-        <div id="fellow-term-dist"></div>
+        <div id="termdist-table"></div>
       </div>
     </div>
 
@@ -342,14 +347,16 @@
   const WEEKS = Array.from({length:10}, (_,i)=>i+1);
 
   const ROLE_LABELS = { academic_team:'Academic Team', fellow:'Fellow', director:'Program Director' };
-  const ROLE_TABS = { academic_team:['admin','fellow','summary','team'], fellow:['fellow'], director:['summary'] };
+  const ROLE_TABS = { academic_team:['admin','fellow','termdist','summary','team'], fellow:['fellow','termdist'], director:['summary','termdist'] };
 
   const CATS = {
     Core:         { color:'#4A5A68', label:'Core', text:'#fff' },
     CIE:          { color:'#1F7A6C', label:'CIE (Critical Inquiry & Expression)', text:'#fff' },
     ELM:          { color:'#6A4C93', label:'ELM', text:'#fff' },
     DS:           { color:'#B4622B', label:'DS', text:'#fff' },
-    Guest:        { color:'#8A6D3A', label:'Guest Session / Lecture / Seminar', text:'#fff' },
+    GuestSession: { color:'#8A6D3A', label:'Guest Session', text:'#fff' },
+    Lecture:      { color:'#946638', label:'Lecture', text:'#fff' },
+    Seminar:      { color:'#9E7A2E', label:'Seminar', text:'#fff' },
     Elective:     { color:'#3F6B4C', label:'Elective', text:'#fff' },
     YIFEvents:    { color:'#4E7A9C', label:'YIF Events', text:'#fff' },
     LECredited:   { color:'#7C4A6B', label:'L&E Module (Credited)', text:'#fff' },
@@ -363,7 +370,9 @@
     CIE: 'Critical Inquiry & Expression coursework.',
     ELM: 'ELM-track session.',
     DS: 'A discussion session tied to a course.',
-    Guest: 'One-off guest lecture, talk, or seminar.',
+    GuestSession: 'One-off guest session.',
+    Lecture: 'One-off lecture.',
+    Seminar: 'One-off seminar.',
     Elective: 'Student-chosen elective coursework.',
     YIFEvents: 'YIF-wide events (socials, cohort gatherings, etc).',
     LECredited: 'Learning & Enrichment module that carries credit.',
@@ -672,6 +681,7 @@
     renderTabs();
     renderAdmin();
     renderFellow();
+    renderTermDist();
     renderSummary();
   }
 
@@ -679,6 +689,7 @@
     const allTabs = [
       {id:'admin', label:'Academic Team'},
       {id:'fellow', label:'Fellows'},
+      {id:'termdist', label:'Term Distribution'},
       {id:'summary', label:'Team Summary'},
       {id:'team', label:'Manage Team'}
     ];
@@ -689,13 +700,13 @@
       `<button class="tab ${currentRole===r.id?'active':''}" data-role="${r.id}">${r.label}</button>`
     ).join('');
     document.querySelectorAll('.tab').forEach(btn=>{
-      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); if (currentRole==='team') renderTeam(); };
+      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); if (currentRole==='team') renderTeam(); if (currentRole==='termdist') renderTermDist(); };
     });
     showPanel();
   }
   function showPanel(){
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.role===currentRole));
-    ['admin','fellow','summary','team'].forEach(r=>{
+    ['admin','fellow','termdist','summary','team'].forEach(r=>{
       document.getElementById('panel-'+r).classList.toggle('active', r===currentRole);
     });
   }
@@ -911,15 +922,14 @@
     weekSel.value = fellowWeekFilter;
     const sessions = state.sessions.filter(s=>s.term===fellowTerm);
     document.getElementById('fellow-weeks').innerHTML = weekGridHTML(sessions, fellowTerm, `<br>Nothing scheduled for ${fellowTerm} yet.`, fellowWeekFilter);
-    document.getElementById('fellow-term-dist').innerHTML = termDistTableHTML();
     document.querySelectorAll('.term-pill[data-action="fellow-term"]').forEach(el=>{
       el.onclick = ()=>{ fellowTerm = el.dataset.term; renderFellow(); };
     });
     weekSel.onchange = ()=>{ fellowWeekFilter = weekSel.value; renderFellow(); };
-    document.getElementById('td-toggle-btn').onclick = ()=>{
-      const card = document.getElementById('fellow-term-dist-card');
-      card.style.display = card.style.display==='none' ? 'block' : 'none';
-    };
+  }
+
+  function renderTermDist(){
+    document.getElementById('termdist-table').innerHTML = termDistTableHTML();
   }
 
   function renderSummary(){
@@ -928,17 +938,17 @@
     let clashCount = 0;
     state.sessions.forEach(s=>{ if (findConflicts(s, s.id).length) clashCount++; });
     const holidaysUpcoming = state.sessions.filter(s=>s.type==='Holiday' && s.dateStart>=today).length;
-    const guestUpcoming = state.sessions.filter(s=>s.type==='Guest' && s.dateStart>=today).length;
+    const guestUpcoming = state.sessions.filter(s=>['GuestSession','Lecture','Seminar'].includes(s.type) && s.dateStart>=today).length;
 
     document.getElementById('summary-stats').innerHTML = `
       <div class="stat"><div class="num">${total}</div><div class="lbl">Total sessions logged</div></div>
       <div class="stat"><div class="num" style="color:${clashCount?'var(--red)':'var(--confirm)'}">${clashCount}</div><div class="lbl">Unresolved clashes</div></div>
       <div class="stat"><div class="num">${holidaysUpcoming}</div><div class="lbl">Holidays ahead</div></div>
-      <div class="stat"><div class="num">${guestUpcoming}</div><div class="lbl">Guest sessions ahead</div></div>
+      <div class="stat"><div class="num">${guestUpcoming}</div><div class="lbl">Guest sessions, lectures &amp; seminars ahead</div></div>
     `;
 
     const upcoming = state.sessions
-      .filter(s=> (s.type==='Holiday' || s.type==='Guest') && s.dateStart>=today)
+      .filter(s=> (s.type==='Holiday' || ['GuestSession','Lecture','Seminar'].includes(s.type)) && s.dateStart>=today)
       .sort((a,b)=>a.dateStart.localeCompare(b.dateStart))
       .slice(0,6);
     document.getElementById('summary-upcoming').innerHTML = upcoming.length ? upcoming.map(s=>`
