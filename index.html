@@ -250,6 +250,7 @@
             <label>Deadline / submission text</label>
             <input id="d-text" placeholder="e.g. Essay draft due">
             <button class="primary amber" id="d-submit">Add deadline</button>
+            <button class="ghost" id="d-cancel-edit" style="display:none; width:100%; margin-top:8px;">Cancel edit</button>
           </div>
 
           <div class="card" style="margin-top:20px;">
@@ -263,6 +264,7 @@
               <div><label>End date</label><input id="td-end" type="date"></div>
             </div>
             <button class="primary" id="td-submit">Add row</button>
+            <button class="ghost" id="td-cancel-edit" style="display:none; width:100%; margin-top:8px;">Cancel edit</button>
           </div>
         </div>
 
@@ -384,6 +386,43 @@
     Holiday: 'Non-teaching day(s) — type the holiday name as the title.'
   };
 
+  // Large, distinguishable palette so each distinct COURSE (not just category) gets its own
+  // color. Same course text (trimmed, case-insensitive) always maps to the same color, whether
+  // it's logged as Core, DS, Elective, etc. — so "Stats" Core sessions and "Stats" DS sessions match.
+  const COLOR_PALETTE = [
+    '#6A4C93','#B4622B','#1F7A6C','#C8102E','#4E7A9C','#8A3FFC','#2E8B57','#D4A017',
+    '#7C4A6B','#3F6B4C','#1F4E79','#A0522D','#6B8E23','#8B4513','#4B2E83','#008080',
+    '#B22222','#5F9EA0','#DAA520','#7B2D8E','#556B2F','#CD5C5C','#20B2AA','#9932CC',
+    '#B8860B','#483D8B','#2F4F4F','#8B008B','#A85751','#6495ED','#D2691E','#9370DB',
+    '#3CB371','#8B3A3A','#5B9BD5','#ED7D31','#4E7A45','#264478','#9E480E','#636363',
+    '#997300','#2E6F6B','#255E91','#7A5CAB','#698ED0','#C9622D','#B33232','#7030A0',
+    '#3E7C5A','#A64D79'
+  ];
+  function normCourse(c){ return (c||'').trim().toLowerCase(); }
+  let courseColorMap = {}; // normalized course name -> { name, color }
+  function buildCourseColorMap(){
+    const seen = {};
+    state.sessions.forEach(s=>{
+      if (s.type==='Holiday' || !s.course) return;
+      const key = normCourse(s.course);
+      if (!seen[key]) seen[key] = s.course.trim();
+    });
+    const sortedKeys = Object.keys(seen).sort((a,b)=> seen[a].toLowerCase().localeCompare(seen[b].toLowerCase()));
+    courseColorMap = {};
+    sortedKeys.forEach((key,i)=>{ courseColorMap[key] = { name: seen[key], color: COLOR_PALETTE[i % COLOR_PALETTE.length] }; });
+  }
+  function courseColor(s){
+    if (s.type==='Holiday') return CATS.Holiday.color;
+    const e = courseColorMap[normCourse(s.course)];
+    return e ? e.color : CATS.Others.color;
+  }
+  function contrastText(hex){
+    const h = hex.replace('#','');
+    const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+    const lum = (0.299*r + 0.587*g + 0.114*b)/255;
+    return lum > 0.62 ? '#2B2B2B' : '#ffffff';
+  }
+
   let state = { sessions: [], deadlines: [], termRows: [] };
   let currentRole = 'admin';
   let myRole = null;
@@ -392,6 +431,8 @@
   let fellowWeekFilter = 'all';
   let fellowView = 'weekly'; // 'weekly' | 'termdist'
   let editingSessionId = null;
+  let editingDeadlineId = null;
+  let editingTermRowId = null;
 
   function uid(){ return 'x' + Math.random().toString(36).slice(2,9); }
 
@@ -443,6 +484,11 @@
     if (error){ alert('Could not save: ' + error.message); return null; }
     return rowToDeadline(data);
   }
+  async function updateDeadlineDB(id, term, week, date, time, text){
+    const { data, error } = await sb.from('deadlines').update({ term, week: week||null, date, time: time||null, text }).eq('id', id).select().single();
+    if (error){ alert('Could not update: ' + error.message); return null; }
+    return rowToDeadline(data);
+  }
   async function deleteDeadlineDB(id){
     const { data, error } = await sb.from('deadlines').delete().eq('id', id).select();
     if (error){ alert('Could not delete: ' + error.message); return false; }
@@ -453,6 +499,11 @@
     const sort = state.termRows.length;
     const { data, error } = await sb.from('term_distribution').insert({ label, start_date:start||null, end_date:end||null, sort_order:sort }).select().single();
     if (error){ alert('Could not save: ' + error.message); return null; }
+    return rowToTermRow(data);
+  }
+  async function updateTermRowDB(id, label, start, end){
+    const { data, error } = await sb.from('term_distribution').update({ label, start_date:start||null, end_date:end||null }).eq('id', id).select().single();
+    if (error){ alert('Could not update: ' + error.message); return null; }
     return rowToTermRow(data);
   }
   async function deleteTermRowDB(id){
@@ -535,17 +586,18 @@
     const conflicts = findConflicts(s, s.id);
     const conflictTag = conflicts.length ? `<span class="s-tag conflict">clash &times; ${conflicts.length}</span>` : '';
     const dateLabel = (s.dateEnd && s.dateEnd!==s.dateStart) ? `${fmtDate(s.dateStart)} – ${fmtDate(s.dateEnd)}` : fmtDate(s.dateStart);
+    const bg = courseColor(s), fg = contrastText(bg);
     return `
       <div class="session-card">
         <div class="s-week">Wk ${s.week||'—'}</div>
         <div class="s-time">${dateLabel}<br>${fmtRange(s)}</div>
-        <div class="s-bar" style="background:${catColor(s.type)}"></div>
+        <div class="s-bar" style="background:${bg}"></div>
         <div class="s-main">
           <div class="course">${displayTitle(s)}</div>
           <div class="meta">${s.faculty ? '<b>'+s.faculty+'</b> &middot; ' : ''}${s.venue||'—'}</div>
         </div>
         <div style="display:flex; gap:6px; align-items:center;">
-          <span class="s-tag" style="background:${catColor(s.type)}; color:${catText(s.type)}">${(CATS[s.type]||CATS.Others).label}</span>
+          <span class="s-tag" style="background:${bg}; color:${fg}">${(CATS[s.type]||CATS.Others).label}</span>
           ${conflictTag}
         </div>
         <button class="icon-btn edit" data-editid="${s.id}" title="Edit">&#9998;</button>
@@ -564,8 +616,8 @@
   }
 
   function blockHTML(s){
-    const bg = catColor(s.type);
-    const fg = catText(s.type);
+    const bg = courseColor(s);
+    const fg = contrastText(bg);
     return `<div class="wt-block" style="background:${bg}; color:${fg}">
       <div class="course">${displayTitle(s)}</div>
       ${s.faculty ? `<div class="meta">${s.faculty}</div>` : ''}
@@ -667,9 +719,16 @@
   }
 
   function legendHTML(){
-    return Object.entries(CATS).map(([k,v])=>`
-      <div class="legend-item"><span class="legend-dot" style="background:${v.color}"></span>${v.label}</div>
-    `).join('');
+    const inTerm = new Set();
+    let hasHoliday = false;
+    state.sessions.filter(s=>s.term===fellowTerm).forEach(s=>{
+      if (s.type==='Holiday'){ hasHoliday = true; return; }
+      inTerm.add(normCourse(s.course));
+    });
+    const entries = Object.values(courseColorMap).filter(v=> inTerm.has(normCourse(v.name)));
+    const items = entries.map(v=>`<div class="legend-item"><span class="legend-dot" style="background:${v.color}"></span>${v.name}</div>`).join('');
+    const holidayItem = hasHoliday ? `<div class="legend-item"><span class="legend-dot" style="background:${CATS.Holiday.color}"></span>Holiday</div>` : '';
+    return items + holidayItem || `<div class="hint-sm">Colors will appear here once sessions are logged for ${fellowTerm}.</div>`;
   }
 
   function termPills(active, action){
@@ -684,6 +743,7 @@
   }
 
   function render(){
+    buildCourseColorMap();
     renderTabs();
     renderAdmin();
     renderFellow();
@@ -762,6 +822,7 @@
       <div class="deadline-item">
         <span class="d-date">${d.week?'Wk '+d.week+' · ':''}${fmtDate(d.date)}${d.time?' · '+fmtTime(d.time):''}</span>
         <span class="d-text">${d.text}</span>
+        <button class="icon-btn edit" data-editdlid="${d.id}" title="Edit">&#9998;</button>
         <button class="icon-btn del" data-dlid="${d.id}" title="Remove">&times;</button>
       </div>`).join('') : `<div class="empty" style="padding:16px;">No deadlines logged for ${adminTerm} yet.</div>`;
 
@@ -769,6 +830,7 @@
       <div class="deadline-item">
         <span class="d-date">${r.start?fmtDateShort(r.start):'—'} &rarr; ${r.end?fmtDateShort(r.end):'—'}</span>
         <span class="d-text">${r.label}</span>
+        <button class="icon-btn edit" data-edittdid="${r.id}" title="Edit">&#9998;</button>
         <button class="icon-btn del" data-tdid="${r.id}" title="Remove">&times;</button>
       </div>`).join('') : `<div class="empty" style="padding:16px;">No term distribution rows yet.</div>`;
 
