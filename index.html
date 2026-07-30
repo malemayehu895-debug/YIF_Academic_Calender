@@ -36,9 +36,21 @@
     .wrap{max-width:1180px;margin:0 auto;}
 
     .auth-screen{ max-width:380px; margin:80px auto; text-align:center; }
+    .auth-screen .logo-container{ margin-bottom:20px; }
+    .auth-screen .logo-container svg{ height:60px; width:auto; }
     .auth-screen h1{ font-family:'Fraunces', serif; font-size:26px; color:var(--blue); margin-bottom:4px; }
     .auth-screen .sub{ font-size:12.5px; color:var(--blue-soft); margin-bottom:20px; }
-    .auth-screen input{ text-align:center; }
+    .auth-screen input{ 
+      text-align:center; 
+      width:100%; 
+      padding:10px 12px;
+      border:1px solid var(--rule);
+      border-radius:4px;
+      font-family:'IBM Plex Sans', sans-serif;
+      font-size:14px;
+      margin-bottom:12px;
+    }
+    .auth-screen input:focus{ outline:2px solid var(--red); outline-offset:-1px; }
     .auth-msg{ margin-top:14px; font-size:12px; }
     .who-am-i{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--blue-soft); display:flex; align-items:center; gap:10px; }
     .who-am-i .role-pill{ background:var(--blue); color:#fff; padding:2px 9px; border-radius:20px; font-weight:600; }
@@ -84,7 +96,22 @@
     .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
     .hint-sm{font-size:10.5px; color:var(--blue-soft); margin-top:4px; line-height:1.4;}
 
-    button.primary{ margin-top:16px; width:100%; background:var(--blue); color:#fff; border:none; padding:10px 14px; font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; border-radius:2px; cursor:pointer; font-weight:600; }
+    button.primary{ 
+      margin-top:16px; 
+      width:100%; 
+      background:var(--blue); 
+      color:#fff; 
+      border:none; 
+      padding:12px 14px; 
+      font-family:'IBM Plex Mono', monospace; 
+      font-size:12px; 
+      letter-spacing:0.06em; 
+      text-transform:uppercase; 
+      border-radius:4px; 
+      cursor:pointer; 
+      font-weight:600; 
+      transition:background 0.2s;
+    }
     button.primary:hover{background:#173D5E;}
     button.primary.amber{ background:var(--amber); }
     button.primary.amber:hover{ background:#C27B1E; }
@@ -178,12 +205,16 @@
     .term-dist-row-edit{ display:grid; grid-template-columns:1.4fr 1fr 1fr auto; gap:8px; align-items:center; padding:8px 4px; border-bottom:1px solid var(--rule-soft); }
     .term-dist-row-edit:last-child{border-bottom:none;}
 
-    .invite-section{ background:var(--paper-raised); border:1px solid var(--rule-soft); border-radius:3px; padding:16px; margin-top:16px; }
+    .invite-section{ background:var(--paper); border:1px solid var(--rule-soft); border-radius:3px; padding:16px; margin-top:16px; }
     .invite-section h3{ font-family:'Fraunces',serif; font-size:14px; margin:0 0 10px; color:var(--blue); }
-    .invite-row{ display:flex; gap:10px; align-items:center; }
-    .invite-row input{ flex:1; }
+    .invite-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .invite-row input{ flex:1; min-width:200px; }
+    .invite-row select{ width:auto; min-width:150px; }
     .invite-row button{ width:auto; margin-top:0; }
     .invite-msg{ margin-top:8px; font-size:12px; }
+
+    .auth-screen .auth-logo{ margin-bottom:24px; }
+    .auth-screen .auth-logo svg{ height:56px; }
   </style>
 </head>
 <body>
@@ -191,10 +222,23 @@
   <div class="wrap">
 
     <div id="auth-screen" class="auth-screen">
+      <div class="auth-logo">
+        <svg viewBox="0 0 160 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="4" width="42" height="42" rx="6" fill="#1F4E79"/>
+          <path d="M12 16L21 34L30 16" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="21" cy="25" r="2.5" fill="white"/>
+          <text x="52" y="22" font-family="Fraunces, serif" font-size="26" font-weight="700" fill="#1F4E79" letter-spacing="-0.5">Ashoka</text>
+          <text x="52" y="40" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#4C6E8C" letter-spacing="2">UNIVERSITY</text>
+          <rect x="132" y="8" width="2" height="36" fill="#1F4E79" opacity="0.15"/>
+          <text x="142" y="24" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="700" fill="#C8102E" letter-spacing="1.5">YIF</text>
+          <text x="142" y="38" font-family="IBM Plex Mono, monospace" font-size="8" font-weight="600" fill="#4C6E8C" letter-spacing="1">FELLOWSHIP</text>
+        </svg>
+      </div>
       <h1>YIF Academic Calendar</h1>
       <div class="sub">Sign in with your Ashoka email to continue</div>
-      <input id="auth-email" type="email" placeholder="you@ashoka.edu.in">
-      <button class="primary" id="auth-send">Send login link</button>
+      <input id="auth-email" type="email" placeholder="you@ashoka.edu.in" value="">
+      <button class="primary" id="auth-send" style="margin-top:0;">Send login link</button>
+      <div id="auth-loading" style="display:none; margin-top:12px; color:var(--blue-soft); font-size:13px;">⏳ Sending...</div>
       <div class="auth-msg" id="auth-msg"></div>
     </div>
 
@@ -203,7 +247,6 @@
     <div class="masthead">
       <div class="masthead-left">
         <a href="#" class="masthead-logo" onclick="return false;">
-          <!-- Ashoka + YIF Logo SVG -->
           <svg viewBox="0 0 120 44" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="0" y="4" width="36" height="36" rx="4" fill="#1F4E79"/>
             <path d="M10 14L18 30L26 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -380,56 +423,4 @@
           <div id="summary-upcoming"></div>
         </div>
         <div class="card">
-          <h2>All deadlines &amp; submissions<span>Across the current term</span></h2>
-          <div id="summary-deadlines"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- MANAGE TEAM (standalone tab - kept for Academic Team access) -->
-    <div class="panel" id="panel-team">
-      <div class="card">
-        <h2>Manage team access<span>Invite team members and manage roles</span></h2>
-        
-        <div class="invite-section">
-          <h3>Invite a team member</h3>
-          <div class="invite-row">
-            <input id="invite-email-team" type="email" placeholder="colleague@ashoka.edu.in">
-            <select id="invite-role-team" style="width:auto; max-width:180px;">
-              <option value="fellow">Fellow</option>
-              <option value="academic_team">Academic Team</option>
-            </select>
-            <button class="primary invite-btn" id="invite-btn-team">Send Invite</button>
-          </div>
-          <div id="invite-feedback-team" class="invite-msg"></div>
-          <div class="hint-sm" style="margin-top:8px;">They'll receive an email invitation to join the calendar.</div>
-        </div>
-        
-        <div class="hint-sm" style="margin-bottom:12px;">Change anyone's role once they've signed in at least once. Changes apply immediately.</div>
-        <div id="team-list-main"></div>
-      </div>
-    </div>
-
-    </div><!-- /app-main -->
-
-  </div>
-</div>
-
-<script>
-(function(){
-  const SUPABASE_URL = 'https://vhpitlbcmyzkwjbprrxh.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_nRXbRzNr4jxyQlOIafy-lA__aMjYoZy';
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  const TERMS = ['Term 1','Term 2','Term 3','Term 4','Term 5','Term 6','Term 7','Term 8'];
-  const WEEKS = Array.from({length:10}, (_,i)=>i+1);
-
-  const ROLE_LABELS = { academic_team:'Academic Team', fellow:'Fellow', director:'Program Director' };
-  const ROLE_TABS = { academic_team:['admin','fellow','summary','team'], fellow:['fellow','summary'], director:['summary'] };
-
-  const CATS = {
-    Core:         { color:'#4A5A68', label:'Core', text:'#fff' },
-    CIE:          { color:'#1F7A6C', label:'CIE (Critical Inquiry & Expression)', text:'#fff' },
-    ELM:          { color:'#6A4C93', label:'ELM', text:'#fff' },
-    DS:           { color:'#B4622B', label:'DS', text:'#fff' },
-    GuestSession: { color:'#8A6
+          <h2>All deadlines &amp;
