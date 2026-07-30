@@ -131,11 +131,11 @@
   .wt-block .course{ font-weight:700; font-size:11px; line-height:1.3; }
   .wt-block .meta{ font-size:9.5px; opacity:0.92; }
   .wt-block .tag{ display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:8.5px; text-transform:uppercase; background:rgba(255,255,255,0.25); padding:1px 6px; border-radius:8px; margin-top:4px; width:fit-content; }
-  .wt-deadline-row td{ background:#FDF3E4; }
-  .wt-deadline-label{ background:var(--amber); color:#fff; font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:10px; text-align:center; padding:8px 6px; text-transform:uppercase; }
-  .wt-deadline-cell{ padding:6px 7px; font-size:10px; color:#7A4E10; }
-  .wt-deadline-chip{ background:#F6D9A8; border-left:3px solid var(--amber); padding:4px 6px; border-radius:2px; margin-bottom:4px; font-weight:600; }
-  .wt-deadline-chip .dtime{ font-family:'IBM Plex Mono', monospace; font-size:9px; display:block; opacity:0.85; }
+  .wt-deadline-row td{ background:#FFF6D6; }
+  .wt-deadline-label{ background:#F7D046; color:#1A1A1A; font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:10px; text-align:center; padding:8px 6px; text-transform:uppercase; }
+  .wt-deadline-cell{ padding:6px 7px; font-size:10px; color:#1A1A1A; }
+  .wt-deadline-chip{ background:#FFF0AD; border-left:3px solid #F7D046; padding:4px 6px; border-radius:2px; margin-bottom:4px; font-weight:700; color:#1A1A1A; }
+  .wt-deadline-chip .dtime{ font-family:'IBM Plex Mono', monospace; font-size:9px; display:block; opacity:0.8; font-weight:500; }
 
   .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:22px;}
   .stat{ background:var(--paper-raised); border:1px solid var(--rule-soft); border-radius:3px; padding:14px 16px; border-top:3px solid var(--blue); }
@@ -220,8 +220,8 @@
             <label>Faculty</label>
             <input id="a-faculty" placeholder="leave blank for Holiday / Events">
             <div class="row2">
-              <div><label>Start Date</label><input id="a-date-start" type="date"></div>
-              <div><label>End Date <span class="hint-sm" style="display:inline">(optional)</span></label><input id="a-date-end" type="date"></div>
+              <div><label>Date</label><input id="a-date-start" type="date"></div>
+              <div id="a-date-end-wrap" style="display:none;"><label>End Date <span class="hint-sm" style="display:inline">(holiday range)</span></label><input id="a-date-end" type="date"></div>
             </div>
             <label>Venue</label>
             <input id="a-venue" placeholder="e.g. Takshila">
@@ -287,10 +287,11 @@
       <div class="toolbar">
         <div class="term-strip" id="fellow-term-strip"></div>
         <select class="week-select" id="fellow-week-select"></select>
+        <button class="ghost" id="td-toggle-btn">Term Distribution</button>
       </div>
       <div class="legend" id="fellow-legend"></div>
       <div id="fellow-weeks"></div>
-      <div class="card" style="margin-top:26px;">
+      <div class="card" id="fellow-term-dist-card" style="margin-top:26px; display:none;">
         <h2>Term distribution<span>Full academic-year timeline</span></h2>
         <div id="fellow-term-dist"></div>
       </div>
@@ -780,7 +781,9 @@
     document.getElementById('a-course').value = s.course;
     document.getElementById('a-faculty').value = s.faculty;
     document.getElementById('a-date-start').value = s.dateStart;
-    document.getElementById('a-date-end').value = (s.dateEnd && s.dateEnd!==s.dateStart) ? s.dateEnd : '';
+    const isHol = s.type==='Holiday';
+    document.getElementById('a-date-end-wrap').style.display = isHol ? 'block' : 'none';
+    document.getElementById('a-date-end').value = (isHol && s.dateEnd && s.dateEnd!==s.dateStart) ? s.dateEnd : '';
     document.getElementById('a-venue').value = s.venue;
     document.getElementById('a-start').value = s.start;
     document.getElementById('a-end').value = s.end;
@@ -801,6 +804,8 @@
     document.getElementById('a-type-hint').textContent = TYPE_HINTS[document.getElementById('a-type').value] || '';
     const isHoliday = document.getElementById('a-type').value === 'Holiday';
     document.getElementById('a-course-lbl-extra').textContent = isHoliday ? '(holiday name)' : '';
+    document.getElementById('a-date-end-wrap').style.display = isHoliday ? 'block' : 'none';
+    if (!isHoliday) document.getElementById('a-date-end').value = '';
   };
 
   document.getElementById('a-submit').onclick = async ()=>{
@@ -895,6 +900,10 @@
       el.onclick = ()=>{ fellowTerm = el.dataset.term; renderFellow(); };
     });
     weekSel.onchange = ()=>{ fellowWeekFilter = weekSel.value; renderFellow(); };
+    document.getElementById('td-toggle-btn').onclick = ()=>{
+      const card = document.getElementById('fellow-term-dist-card');
+      card.style.display = card.style.display==='none' ? 'block' : 'none';
+    };
   }
 
   function renderSummary(){
