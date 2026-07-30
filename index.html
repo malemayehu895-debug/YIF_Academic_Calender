@@ -151,6 +151,7 @@
   .cat-pill{ display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:5px 10px; border-radius:20px; }
 
   .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;}
+  #td-toggle-btn{ width:auto; margin-top:0; padding:8px 16px; }
 
   .team-row{ display:grid; grid-template-columns:1fr 180px 90px; gap:10px; align-items:center; padding:10px 4px; border-bottom:1px solid var(--rule-soft); }
   .team-row:last-child{border-bottom:none;}
@@ -291,16 +292,17 @@
       <div class="toolbar">
         <div class="term-strip" id="fellow-term-strip"></div>
         <select class="week-select" id="fellow-week-select"></select>
+        <button class="primary" id="td-toggle-btn">Term Distribution</button>
       </div>
-      <div class="legend" id="fellow-legend"></div>
-      <div id="fellow-weeks"></div>
-    </div>
-
-    <!-- TERM DISTRIBUTION -->
-    <div class="panel" id="panel-termdist">
-      <div class="card">
-        <h2>Term distribution<span>Full academic-year timeline</span></h2>
-        <div id="termdist-table"></div>
+      <div id="fellow-weekly-view">
+        <div class="legend" id="fellow-legend"></div>
+        <div id="fellow-weeks"></div>
+      </div>
+      <div id="fellow-termdist-view" style="display:none;">
+        <div class="card">
+          <h2>Term distribution<span>Full academic-year timeline</span></h2>
+          <div id="termdist-table"></div>
+        </div>
       </div>
     </div>
 
@@ -347,7 +349,7 @@
   const WEEKS = Array.from({length:10}, (_,i)=>i+1);
 
   const ROLE_LABELS = { academic_team:'Academic Team', fellow:'Fellow', director:'Program Director' };
-  const ROLE_TABS = { academic_team:['admin','fellow','termdist','summary','team'], fellow:['fellow','termdist'], director:['summary','termdist'] };
+  const ROLE_TABS = { academic_team:['admin','fellow','summary','team'], fellow:['fellow'], director:['summary'] };
 
   const CATS = {
     Core:         { color:'#4A5A68', label:'Core', text:'#fff' },
@@ -388,6 +390,7 @@
   let adminTerm = 'Term 1';
   let fellowTerm = 'Term 1';
   let fellowWeekFilter = 'all';
+  let fellowView = 'weekly'; // 'weekly' | 'termdist'
   let editingSessionId = null;
 
   function uid(){ return 'x' + Math.random().toString(36).slice(2,9); }
@@ -681,7 +684,6 @@
     renderTabs();
     renderAdmin();
     renderFellow();
-    renderTermDist();
     renderSummary();
   }
 
@@ -689,7 +691,6 @@
     const allTabs = [
       {id:'admin', label:'Academic Team'},
       {id:'fellow', label:'Fellows'},
-      {id:'termdist', label:'Term Distribution'},
       {id:'summary', label:'Team Summary'},
       {id:'team', label:'Manage Team'}
     ];
@@ -700,13 +701,13 @@
       `<button class="tab ${currentRole===r.id?'active':''}" data-role="${r.id}">${r.label}</button>`
     ).join('');
     document.querySelectorAll('.tab').forEach(btn=>{
-      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); if (currentRole==='team') renderTeam(); if (currentRole==='termdist') renderTermDist(); };
+      btn.onclick = ()=>{ currentRole = btn.dataset.role; showPanel(); if (currentRole==='team') renderTeam(); };
     });
     showPanel();
   }
   function showPanel(){
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.role===currentRole));
-    ['admin','fellow','termdist','summary','team'].forEach(r=>{
+    ['admin','fellow','summary','team'].forEach(r=>{
       document.getElementById('panel-'+r).classList.toggle('active', r===currentRole);
     });
   }
@@ -922,14 +923,20 @@
     weekSel.value = fellowWeekFilter;
     const sessions = state.sessions.filter(s=>s.term===fellowTerm);
     document.getElementById('fellow-weeks').innerHTML = weekGridHTML(sessions, fellowTerm, `<br>Nothing scheduled for ${fellowTerm} yet.`, fellowWeekFilter);
+    document.getElementById('termdist-table').innerHTML = termDistTableHTML();
+
+    document.getElementById('fellow-weekly-view').style.display = fellowView==='weekly' ? 'block' : 'none';
+    document.getElementById('fellow-termdist-view').style.display = fellowView==='termdist' ? 'block' : 'none';
+    document.getElementById('td-toggle-btn').textContent = fellowView==='weekly' ? 'Term Distribution' : 'Back to Weekly View';
+
     document.querySelectorAll('.term-pill[data-action="fellow-term"]').forEach(el=>{
       el.onclick = ()=>{ fellowTerm = el.dataset.term; renderFellow(); };
     });
     weekSel.onchange = ()=>{ fellowWeekFilter = weekSel.value; renderFellow(); };
-  }
-
-  function renderTermDist(){
-    document.getElementById('termdist-table').innerHTML = termDistTableHTML();
+    document.getElementById('td-toggle-btn').onclick = ()=>{
+      fellowView = fellowView==='weekly' ? 'termdist' : 'weekly';
+      renderFellow();
+    };
   }
 
   function renderSummary(){
