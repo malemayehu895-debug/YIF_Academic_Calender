@@ -1000,22 +1000,7 @@
       const saved = await addPendingInviteDB(email, role);
       if (!saved) return;
       const roleLabel = ROLE_LABELS[role] || role;
-      const signInUrl = window.location.origin + window.location.pathname;
-      const inviteMsg = `Hi! You've been added to the YIF Academic Calendar as ${roleLabel}.\n\nSign in here: ${signInUrl}\nJust enter your email (${email}) and tap "Send login link" — you'll get a one-time sign-in link by email, and you'll land in the calendar with the right access automatically.`;
-      fb.innerHTML = `
-        <div class="ok">Saved — ${email} is pre-approved as ${roleLabel}. Send them this so they can sign in themselves (their own "Send login link" click is what makes sign-in work reliably):</div>
-        <textarea id="inv-msg-box" readonly style="width:100%; min-height:96px; margin-top:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; padding:10px; border:1px solid var(--rule); border-radius:2px; resize:vertical;">${inviteMsg}</textarea>
-        <button class="ghost" id="inv-copy-btn" style="width:auto; margin-top:6px;">Copy message</button>
-      `;
-      document.getElementById('inv-copy-btn').onclick = ()=>{
-        const box = document.getElementById('inv-msg-box');
-        box.select();
-        navigator.clipboard.writeText(box.value).then(()=>{
-          const btn = document.getElementById('inv-copy-btn');
-          btn.textContent = 'Copied!';
-          setTimeout(()=>{ btn.textContent = 'Copy message'; }, 1500);
-        });
-      };
+      fb.innerHTML = `<div class="ok">Saved — ${email} is pre-approved as ${roleLabel}. Once they sign in themselves, they'll land in the calendar with that role automatically.</div>`;
       document.getElementById('inv-email').value = '';
       renderTeam();
     }
@@ -1226,9 +1211,24 @@
       if (profile) break;
       await new Promise(r=>setTimeout(r, 900));
     }
-    if (error || !profile){
-      showAuthScreen('<div class="warn">Still setting up your account — please wait a few seconds and click Send login link again.</div>');
-      return;
+    if (!profile){
+      // No profile got created automatically (no trigger, or it hasn't run yet) — create it ourselves
+      // so people aren't stuck. Use their pre-approved role from pending_invites if one exists.
+      let presetRole = 'fellow';
+      try {
+        const { data: invite } = await sb.from('pending_invites').select('role').eq('email', (user.email||'').toLowerCase()).maybeSingle();
+        if (invite && invite.role) presetRole = invite.role;
+      } catch(e){ /* pending_invites table may not exist yet — safe to ignore, default to fellow */ }
+      const { data: created, error: insErr } = await sb.from('profiles')
+        .insert({ id: user.id, email: user.email, role: presetRole })
+        .select('role,email').maybeSingle();
+      if (created){
+        profile = created;
+        try { await sb.from('pending_invites').delete().eq('email', (user.email||'').toLowerCase()); } catch(e){}
+      } else {
+        showAuthScreen('<div class="warn">Your account exists but the calendar could not finish setting up your access (a database permission is blocking it). Please contact an admin — this needs a quick fix on the database side, refreshing or resending the link won\'t help.</div>');
+        return;
+      }
     }
     // If someone had pre-set a role for this email before they ever signed in, apply it now and clear the invite.
     try {
