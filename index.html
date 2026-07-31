@@ -1242,7 +1242,11 @@
       return;
     }
     const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.origin + window.location.pathname } });
-    if (error){ msgEl.innerHTML = `<div class="warn">${error.message}</div>`; return; }
+    if (error){
+      const msg = error.message && error.message !== '{}' ? error.message : 'Something went wrong sending the link. If this is an external/approved email, ask the academic team to double-check it was added correctly.';
+      msgEl.innerHTML = `<div class="warn">${msg}</div>`;
+      return;
+    }
     msgEl.innerHTML = '<div class="ok">Check your inbox — click the link we just sent to sign in.</div>';
   };
 
