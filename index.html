@@ -44,7 +44,7 @@
   }
   .masthead-brand{ display:flex; align-items:center; gap:16px; }
   .masthead-logo{ height:56px; width:auto; display:block; }
-  .masthead-subtitle{ font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--blue-soft); border-left:2px solid var(--rule); padding-left:16px; }
+  .masthead-subtitle{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--blue); border-left:2px solid var(--rule); padding-left:16px; }
 
   .tabs{ display:flex; gap:2px; margin-bottom:22px; border-bottom:1px solid var(--rule); flex-wrap:wrap; }
   .tab{
@@ -332,7 +332,7 @@
           <button class="primary" id="team-toggle-btn" style="width:auto; margin-top:0;">Manage Team</button>
         </div>
         <div id="team-management" style="display:none; margin-top:18px;">
-          <div class="hint-sm" style="margin-bottom:12px;">Invite someone with their @ashoka.edu.in email. They'll get a sign-in link by email, and land in the calendar with the role you choose — automatically, the first time they sign in.</div>
+          <div class="hint-sm" style="margin-bottom:12px;">Pre-approve someone with their @ashoka.edu.in email. They sign in themselves (using "Send login link" below), and land in the calendar with the role you choose here — automatically.</div>
           <div class="row2">
             <div><label>Email</label><input id="inv-email" placeholder="name@ashoka.edu.in"></div>
             <div><label>Role</label><select id="inv-role">
@@ -340,7 +340,7 @@
               <option value="academic_team">Academic Team</option>
             </select></div>
           </div>
-          <button class="primary" id="inv-submit">Send invite</button>
+          <button class="primary" id="inv-submit">Add to team</button>
           <div id="inv-feedback"></div>
           <div id="inv-list" style="margin-top:14px;"></div>
           <div class="hint-sm" style="margin:20px 0 8px;">Everyone who has signed in at least once — change their role or remove them below.</div>
@@ -482,8 +482,9 @@
     return rowToSession(data);
   }
   async function updateSessionDB(id, s){
-    const { data, error } = await sb.from('sessions').update(sessionToRow(s)).eq('id', id).select().single();
+    const { data, error } = await sb.from('sessions').update(sessionToRow(s)).eq('id', id).select().maybeSingle();
     if (error){ alert('Could not update: ' + error.message); return null; }
+    if (!data){ alert('The edit did not save (0 rows updated) — this usually means a database permission is blocking updates. Nothing was changed.'); return null; }
     return rowToSession(data);
   }
   async function deleteSessionDB(id){
@@ -498,8 +499,9 @@
     return rowToDeadline(data);
   }
   async function updateDeadlineDB(id, term, week, date, time, text){
-    const { data, error } = await sb.from('deadlines').update({ term, week: week||null, date, time: time||null, text }).eq('id', id).select().single();
+    const { data, error } = await sb.from('deadlines').update({ term, week: week||null, date, time: time||null, text }).eq('id', id).select().maybeSingle();
     if (error){ alert('Could not update: ' + error.message); return null; }
+    if (!data){ alert('The edit did not save (0 rows updated) — this usually means a database permission is blocking updates. Nothing was changed.'); return null; }
     return rowToDeadline(data);
   }
   async function deleteDeadlineDB(id){
@@ -515,8 +517,9 @@
     return rowToTermRow(data);
   }
   async function updateTermRowDB(id, label, start, end){
-    const { data, error } = await sb.from('term_distribution').update({ label, start_date:start||null, end_date:end||null }).eq('id', id).select().single();
+    const { data, error } = await sb.from('term_distribution').update({ label, start_date:start||null, end_date:end||null }).eq('id', id).select().maybeSingle();
     if (error){ alert('Could not update: ' + error.message); return null; }
+    if (!data){ alert('The edit did not save (0 rows updated) — this usually means a database permission is blocking updates. Nothing was changed.'); return null; }
     return rowToTermRow(data);
   }
   async function deleteTermRowDB(id){
@@ -985,22 +988,37 @@
       fb.innerHTML = '<div class="warn">Only @ashoka.edu.in email addresses can be invited.</div>';
       return;
     }
-    fb.innerHTML = '<div class="hint-sm">Sending…</div>';
+    fb.innerHTML = '<div class="hint-sm">Saving…</div>';
     const { data: existing } = await sb.from('profiles').select('id,role').eq('email', email).maybeSingle();
     if (existing){
       const { error } = await sb.from('profiles').update({ role }).eq('id', existing.id);
       if (error){ fb.innerHTML = `<div class="warn">${error.message}</div>`; return; }
       fb.innerHTML = `<div class="ok">They already have an account — set to ${ROLE_LABELS[role]} immediately.</div>`;
+      document.getElementById('inv-email').value = '';
+      renderTeam();
     } else {
       const saved = await addPendingInviteDB(email, role);
       if (!saved) return;
-      const { error: otpErr } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
-      fb.innerHTML = otpErr
-        ? `<div class="warn">Saved their role, but the invite email couldn't be sent (${otpErr.message}). They can still sign in themselves with the login link on the sign-in screen.</div>`
-        : `<div class="ok">Invite sent to ${email} — they'll get a sign-in link by email, and land in the calendar as ${ROLE_LABELS[role]} automatically.</div>`;
+      const roleLabel = ROLE_LABELS[role] || role;
+      const signInUrl = window.location.origin + window.location.pathname;
+      const inviteMsg = `Hi! You've been added to the YIF Academic Calendar as ${roleLabel}.\n\nSign in here: ${signInUrl}\nJust enter your email (${email}) and tap "Send login link" — you'll get a one-time sign-in link by email, and you'll land in the calendar with the right access automatically.`;
+      fb.innerHTML = `
+        <div class="ok">Saved — ${email} is pre-approved as ${roleLabel}. Send them this so they can sign in themselves (their own "Send login link" click is what makes sign-in work reliably):</div>
+        <textarea id="inv-msg-box" readonly style="width:100%; min-height:96px; margin-top:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; padding:10px; border:1px solid var(--rule); border-radius:2px; resize:vertical;">${inviteMsg}</textarea>
+        <button class="ghost" id="inv-copy-btn" style="width:auto; margin-top:6px;">Copy message</button>
+      `;
+      document.getElementById('inv-copy-btn').onclick = ()=>{
+        const box = document.getElementById('inv-msg-box');
+        box.select();
+        navigator.clipboard.writeText(box.value).then(()=>{
+          const btn = document.getElementById('inv-copy-btn');
+          btn.textContent = 'Copied!';
+          setTimeout(()=>{ btn.textContent = 'Copy message'; }, 1500);
+        });
+      };
+      document.getElementById('inv-email').value = '';
+      renderTeam();
     }
-    document.getElementById('inv-email').value = '';
-    renderTeam();
   };
 
   function startEditSession(id){
@@ -1239,7 +1257,7 @@
       msgEl.innerHTML = '<div class="warn">Only @ashoka.edu.in email addresses can sign in.</div>';
       return;
     }
-    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.href } });
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.origin + window.location.pathname } });
     if (error){ msgEl.innerHTML = `<div class="warn">${error.message}</div>`; return; }
     msgEl.innerHTML = '<div class="ok">Check your inbox — click the link we just sent to sign in.</div>';
   };
