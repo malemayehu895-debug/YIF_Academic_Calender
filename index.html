@@ -180,7 +180,11 @@
       <h1>YIF Academic Calendar</h1>
       <div class="sub">Sign in with your Ashoka email to continue</div>
       <input id="auth-email" type="email" placeholder="you@ashoka.edu.in">
-      <button class="primary" id="auth-send">Send login link</button>
+      <button class="primary" id="auth-send">Send code</button>
+      <div id="auth-code-row" style="display:none; gap:8px; margin-top:10px;">
+        <input id="auth-code" placeholder="6-digit code from your email" style="flex:1; letter-spacing:0.08em;">
+        <button class="primary" id="auth-verify" style="width:auto; white-space:nowrap;">Verify</button>
+      </div>
       <div class="auth-msg" id="auth-msg"></div>
     </div>
 
@@ -1259,8 +1263,24 @@
     }
     const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.origin + window.location.pathname } });
     if (error){ msgEl.innerHTML = `<div class="warn">${error.message}</div>`; return; }
-    msgEl.innerHTML = '<div class="ok">Check your inbox — click the link we just sent to sign in.</div>';
+    msgEl.innerHTML = '<div class="ok">Check your inbox — enter the 6-digit code below. (There may also be a link, but if your email scans links automatically, the code is what actually works.)</div>';
+    document.getElementById('auth-code-row').style.display = 'flex';
+    document.getElementById('auth-code').focus();
   };
+
+  document.getElementById('auth-verify').onclick = async ()=>{
+    const email = document.getElementById('auth-email').value.trim();
+    const code = document.getElementById('auth-code').value.trim();
+    const msgEl = document.getElementById('auth-msg');
+    if (!code){ msgEl.innerHTML = '<div class="warn">Enter the 6-digit code from your email.</div>'; return; }
+    msgEl.innerHTML = '<div class="hint-sm">Verifying…</div>';
+    const { error } = await sb.auth.verifyOtp({ email, token: code, type: 'email' });
+    if (error){ msgEl.innerHTML = `<div class="warn">${error.message}</div>`; return; }
+    // onAuthStateChange picks up the new session and calls showApp automatically.
+  };
+  document.getElementById('auth-code').addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') document.getElementById('auth-verify').click();
+  });
 
   sb.auth.onAuthStateChange((event, session)=>{
     if (session && session.user){ showApp(session.user); }
