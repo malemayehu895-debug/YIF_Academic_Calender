@@ -171,6 +171,19 @@
   .term-dist-table th{ background:var(--blue); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; }
   .term-dist-row-edit{ display:grid; grid-template-columns:1.4fr 1fr 1fr auto; gap:8px; align-items:center; padding:8px 4px; border-bottom:1px solid var(--rule-soft); }
   .term-dist-row-edit:last-child{border-bottom:none;}
+
+  /* Global type system: sans-serif for all interface text, Georgia for headings */
+  #app, #app * { font-family: Arial, Helvetica, sans-serif !important; }
+  #app h1,
+  #app h2,
+  #app .auth-screen h1,
+  #app .masthead h1,
+  #app .card h2,
+  #app .empty b,
+  #app .week-head .wk-num,
+  #app .stat .num {
+    font-family: Georgia, 'Times New Roman', serif !important;
+  }
 </style>
 
 <div id="app">
