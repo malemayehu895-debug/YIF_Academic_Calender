@@ -180,11 +180,7 @@
       <h1>YIF Academic Calendar</h1>
       <div class="sub">Sign in with your Ashoka email to continue</div>
       <input id="auth-email" type="email" placeholder="you@ashoka.edu.in">
-      <button class="primary" id="auth-send">Send code</button>
-      <div id="auth-code-row" style="display:none; gap:8px; margin-top:10px;">
-        <input id="auth-code" placeholder="6-digit code from your email" style="flex:1; letter-spacing:0.08em;">
-        <button class="primary" id="auth-verify" style="width:auto; white-space:nowrap;">Verify</button>
-      </div>
+      <button class="primary" id="auth-send">Send login link</button>
       <div class="auth-msg" id="auth-msg"></div>
     </div>
 
@@ -332,22 +328,11 @@
       </div>
       <div class="card" style="margin-top:20px;">
         <div class="toolbar" style="margin-bottom:0;">
-          <h2 style="border:none; margin:0; padding:0;">Team access<span>Invite, promote, or remove people</span></h2>
+          <h2 style="border:none; margin:0; padding:0;">Team access<span>Promote or remove people</span></h2>
           <button class="primary" id="team-toggle-btn" style="width:auto; margin-top:0;">Manage Team</button>
         </div>
         <div id="team-management" style="display:none; margin-top:18px;">
-          <div class="hint-sm" style="margin-bottom:12px;">Pre-approve someone with their @ashoka.edu.in email. They sign in themselves (using "Send login link" below), and land in the calendar with the role you choose here — automatically.</div>
-          <div class="row2">
-            <div><label>Email</label><input id="inv-email" placeholder="name@ashoka.edu.in"></div>
-            <div><label>Role</label><select id="inv-role">
-              <option value="fellow">Fellow</option>
-              <option value="academic_team">Academic Team</option>
-            </select></div>
-          </div>
-          <button class="primary" id="inv-submit">Add to team</button>
-          <div id="inv-feedback"></div>
-          <div id="inv-list" style="margin-top:14px;"></div>
-          <div class="hint-sm" style="margin:20px 0 8px;">Everyone who has signed in at least once — change their role or remove them below.</div>
+          <div class="hint-sm" style="margin-bottom:12px;">Ask them to sign in with their @ashoka.edu.in email first — everyone who's signed in at least once shows up below. Then set their role here.</div>
           <div id="team-list"></div>
         </div>
       </div>
@@ -794,21 +779,6 @@
     });
   }
 
-  async function loadPendingInvites(){
-    const { data, error } = await sb.from('pending_invites').select('*').order('email');
-    if (error){ console.error('pending_invites load error', error); return []; }
-    return data || [];
-  }
-  async function addPendingInviteDB(email, role){
-    const { data, error } = await sb.from('pending_invites').upsert({ email, role }, { onConflict:'email' }).select().single();
-    if (error){ alert('Could not save invite: ' + error.message); return null; }
-    return data;
-  }
-  async function deletePendingInviteDB(email){
-    const { error } = await sb.from('pending_invites').delete().eq('email', email);
-    if (error){ alert('Could not remove invite: ' + error.message); return false; }
-    return true;
-  }
   async function removeTeamMemberDB(id){
     const { data, error } = await sb.from('profiles').delete().eq('id', id).select();
     if (error){ alert('Could not remove: ' + error.message); return false; }
@@ -818,24 +788,7 @@
 
   async function renderTeam(){
     const el = document.getElementById('team-list');
-    const invEl = document.getElementById('inv-list');
     el.innerHTML = `<div class="empty" style="padding:16px;">Loading team…</div>`;
-    invEl.innerHTML = '';
-
-    const invites = await loadPendingInvites();
-    invEl.innerHTML = invites.length ? `<div class="hint-sm" style="margin-bottom:8px;">Invited — role applies the moment they sign in:</div>` + invites.map(i=>`
-      <div class="invite-row" data-email="${i.email}">
-        <span class="t-email">${i.email}</span>
-        <span class="invite-role-pill">${ROLE_LABELS[i.role]||i.role}</span>
-        <button class="ghost t-cancel-invite">Cancel invite</button>
-      </div>`).join('') : '';
-    invEl.querySelectorAll('.t-cancel-invite').forEach(btn=>{
-      btn.onclick = async ()=>{
-        const email = btn.closest('.invite-row').dataset.email;
-        const ok = await deletePendingInviteDB(email);
-        if (ok) renderTeam();
-      };
-    });
 
     const { data, error } = await sb.from('profiles').select('id,email,role').order('email');
     if (error){ el.innerHTML = `<div class="warn">Could not load the team list: ${error.message}</div>`; return; }
@@ -862,7 +815,7 @@
         setTimeout(()=>{ btn.textContent='Save'; }, 1500);
       };
       row.querySelector('.t-remove').onclick = async ()=>{
-        if (!confirm(`Remove ${row.querySelector('.t-email').textContent} from the system? They'll lose access until re-invited.`)) return;
+        if (!confirm(`Remove ${row.querySelector('.t-email').textContent} from the system? They'll lose access until they sign in again.`)) return;
         const ok = await removeTeamMemberDB(row.dataset.id);
         if (ok) renderTeam();
       };
@@ -982,32 +935,6 @@
     el.style.display = opening ? 'block' : 'none';
     document.getElementById('team-toggle-btn').textContent = opening ? 'Hide Team Management' : 'Manage Team';
     if (opening) renderTeam();
-  };
-
-  document.getElementById('inv-submit').onclick = async ()=>{
-    const email = document.getElementById('inv-email').value.trim().toLowerCase();
-    const role = document.getElementById('inv-role').value;
-    const fb = document.getElementById('inv-feedback');
-    if (!/@ashoka\.edu\.in$/i.test(email)){
-      fb.innerHTML = '<div class="warn">Only @ashoka.edu.in email addresses can be invited.</div>';
-      return;
-    }
-    fb.innerHTML = '<div class="hint-sm">Saving…</div>';
-    const { data: existing } = await sb.from('profiles').select('id,role').eq('email', email).maybeSingle();
-    if (existing){
-      const { error } = await sb.from('profiles').update({ role }).eq('id', existing.id);
-      if (error){ fb.innerHTML = `<div class="warn">${error.message}</div>`; return; }
-      fb.innerHTML = `<div class="ok">They already have an account — set to ${ROLE_LABELS[role]} immediately.</div>`;
-      document.getElementById('inv-email').value = '';
-      renderTeam();
-    } else {
-      const saved = await addPendingInviteDB(email, role);
-      if (!saved) return;
-      const roleLabel = ROLE_LABELS[role] || role;
-      fb.innerHTML = `<div class="ok">Saved — ${email} is pre-approved as ${roleLabel}. Once they sign in themselves, they'll land in the calendar with that role automatically.</div>`;
-      document.getElementById('inv-email').value = '';
-      renderTeam();
-    }
   };
 
   function startEditSession(id){
@@ -1217,32 +1144,17 @@
     }
     if (!profile){
       // No profile got created automatically (no trigger, or it hasn't run yet) — create it ourselves
-      // so people aren't stuck. Use their pre-approved role from pending_invites if one exists.
-      let presetRole = 'fellow';
-      try {
-        const { data: invite } = await sb.from('pending_invites').select('role').eq('email', (user.email||'').toLowerCase()).maybeSingle();
-        if (invite && invite.role) presetRole = invite.role;
-      } catch(e){ /* pending_invites table may not exist yet — safe to ignore, default to fellow */ }
+      // so people aren't stuck. Defaults to Fellow; an admin can promote them from Team Summary after.
       const { data: created, error: insErr } = await sb.from('profiles')
-        .insert({ id: user.id, email: user.email, role: presetRole })
+        .insert({ id: user.id, email: user.email, role: 'fellow' })
         .select('role,email').maybeSingle();
       if (created){
         profile = created;
-        try { await sb.from('pending_invites').delete().eq('email', (user.email||'').toLowerCase()); } catch(e){}
       } else {
         showAuthScreen('<div class="warn">Your account exists but the calendar could not finish setting up your access (a database permission is blocking it). Please contact an admin — this needs a quick fix on the database side, refreshing or resending the link won\'t help.</div>');
         return;
       }
     }
-    // If someone had pre-set a role for this email before they ever signed in, apply it now and clear the invite.
-    try {
-      const { data: invite } = await sb.from('pending_invites').select('*').eq('email', profile.email.toLowerCase()).maybeSingle();
-      if (invite && invite.role !== profile.role){
-        const { data: updated, error: updErr } = await sb.from('profiles').update({ role: invite.role }).eq('id', user.id).select('role,email').single();
-        if (!updErr && updated) profile = updated;
-        await sb.from('pending_invites').delete().eq('email', profile.email.toLowerCase());
-      }
-    } catch(e){ /* pending_invites table may not exist yet — safe to ignore */ }
     myRole = profile.role;
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-main').style.display = 'block';
@@ -1263,24 +1175,8 @@
     }
     const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.origin + window.location.pathname } });
     if (error){ msgEl.innerHTML = `<div class="warn">${error.message}</div>`; return; }
-    msgEl.innerHTML = '<div class="ok">Check your inbox — enter the 6-digit code below. (There may also be a link, but if your email scans links automatically, the code is what actually works.)</div>';
-    document.getElementById('auth-code-row').style.display = 'flex';
-    document.getElementById('auth-code').focus();
+    msgEl.innerHTML = '<div class="ok">Check your inbox — click the link we just sent to sign in.</div>';
   };
-
-  document.getElementById('auth-verify').onclick = async ()=>{
-    const email = document.getElementById('auth-email').value.trim();
-    const code = document.getElementById('auth-code').value.trim();
-    const msgEl = document.getElementById('auth-msg');
-    if (!code){ msgEl.innerHTML = '<div class="warn">Enter the 6-digit code from your email.</div>'; return; }
-    msgEl.innerHTML = '<div class="hint-sm">Verifying…</div>';
-    const { error } = await sb.auth.verifyOtp({ email, token: code, type: 'email' });
-    if (error){ msgEl.innerHTML = `<div class="warn">${error.message}</div>`; return; }
-    // onAuthStateChange picks up the new session and calls showApp automatically.
-  };
-  document.getElementById('auth-code').addEventListener('keydown', (e)=>{
-    if (e.key === 'Enter') document.getElementById('auth-verify').click();
-  });
 
   sb.auth.onAuthStateChange((event, session)=>{
     if (session && session.user){ showApp(session.user); }
