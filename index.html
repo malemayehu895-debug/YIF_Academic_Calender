@@ -334,6 +334,17 @@
         <div id="team-management" style="display:none; margin-top:18px;">
           <div class="hint-sm" style="margin-bottom:12px;">Ask them to sign in with their @ashoka.edu.in email first — everyone who's signed in at least once shows up below. Then set their role here.</div>
           <div id="team-list"></div>
+
+          <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--rule-soft);">
+            <div style="font-family:'Fraunces',serif; font-weight:700; font-size:15px; color:var(--blue); margin-bottom:4px;">External faculty access</div>
+            <div class="hint-sm" style="margin-bottom:12px;">For faculty without an @ashoka.edu.in address. Approve their email here first — then they can sign in normally on the sign-in screen with that email, and they'll see the Fellow calendar (read-only).</div>
+            <div class="row2">
+              <div><label>Email</label><input id="ext-email" placeholder="name@university.edu"></div>
+              <div style="display:flex; align-items:flex-end;"><button class="primary" id="ext-submit" style="margin-top:0;">Allow access</button></div>
+            </div>
+            <div id="ext-feedback"></div>
+            <div id="ext-list" style="margin-top:12px;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -786,6 +797,58 @@
     return true;
   }
 
+  async function loadExternalAccess(){
+    const { data, error } = await sb.from('external_access').select('*').order('email');
+    if (error){ console.error('external_access load error', error); return []; }
+    return data || [];
+  }
+  async function addExternalAccessDB(email){
+    const { data, error } = await sb.from('external_access').upsert({ email }, { onConflict:'email' }).select().single();
+    if (error){ alert('Could not save: ' + error.message); return null; }
+    return data;
+  }
+  async function removeExternalAccessDB(email){
+    const { error } = await sb.from('external_access').delete().eq('email', email);
+    if (error){ alert('Could not remove: ' + error.message); return false; }
+    return true;
+  }
+  async function renderExternalAccess(){
+    const el = document.getElementById('ext-list');
+    if (!el) return;
+    el.innerHTML = `<div class="empty" style="padding:10px;">Loading…</div>`;
+    const rows = await loadExternalAccess();
+    el.innerHTML = rows.length ? rows.map(r=>`
+      <div class="invite-row" data-email="${r.email}">
+        <span class="t-email">${r.email}</span>
+        <button class="ghost t-remove-ext">Remove access</button>
+      </div>`).join('') : `<div class="empty" style="padding:10px;">No external faculty approved yet.</div>`;
+    el.querySelectorAll('.t-remove-ext').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const email = btn.closest('.invite-row').dataset.email;
+        if (!confirm(`Remove sign-in access for ${email}?`)) return;
+        const ok = await removeExternalAccessDB(email);
+        if (ok) renderExternalAccess();
+      };
+    });
+  }
+  document.getElementById('ext-submit').onclick = async ()=>{
+    const email = document.getElementById('ext-email').value.trim().toLowerCase();
+    const fb = document.getElementById('ext-feedback');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      fb.innerHTML = '<div class="warn">Enter a valid email address.</div>';
+      return;
+    }
+    if (/@ashoka\.edu\.in$/i.test(email)){
+      fb.innerHTML = '<div class="warn">Ashoka emails can already sign in directly — no need to add them here.</div>';
+      return;
+    }
+    const saved = await addExternalAccessDB(email);
+    if (!saved) return;
+    fb.innerHTML = `<div class="ok">${email} can now sign in with "Send login link" on the sign-in screen.</div>`;
+    document.getElementById('ext-email').value = '';
+    renderExternalAccess();
+  };
+
   async function renderTeam(){
     const el = document.getElementById('team-list');
     el.innerHTML = `<div class="empty" style="padding:16px;">Loading team…</div>`;
@@ -934,7 +997,7 @@
     const opening = el.style.display === 'none';
     el.style.display = opening ? 'block' : 'none';
     document.getElementById('team-toggle-btn').textContent = opening ? 'Hide Team Management' : 'Manage Team';
-    if (opening) renderTeam();
+    if (opening){ renderTeam(); renderExternalAccess(); }
   };
 
   function startEditSession(id){
@@ -1166,11 +1229,16 @@
   }
 
   document.getElementById('auth-send').onclick = async ()=>{
-    const email = document.getElementById('auth-email').value.trim();
+    const email = document.getElementById('auth-email').value.trim().toLowerCase();
     const msgEl = document.getElementById('auth-msg');
     if (!email){ msgEl.innerHTML = '<div class="warn">Enter your email first.</div>'; return; }
-    if (!/@ashoka\.edu\.in$/i.test(email)){
-      msgEl.innerHTML = '<div class="warn">Only @ashoka.edu.in email addresses can sign in.</div>';
+    let allowed = /@ashoka\.edu\.in$/i.test(email);
+    if (!allowed){
+      const { data: ext } = await sb.from('external_access').select('email').eq('email', email).maybeSingle();
+      allowed = !!ext;
+    }
+    if (!allowed){
+      msgEl.innerHTML = '<div class="warn">This email isn\'t recognized. Ashoka students/staff can sign in directly — external faculty need to be approved by the academic team first.</div>';
       return;
     }
     const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: window.location.origin + window.location.pathname } });
